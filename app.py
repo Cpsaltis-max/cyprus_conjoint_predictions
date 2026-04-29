@@ -661,8 +661,8 @@ def render_project_information() -> None:
         """
         <section class="info-section">
             <h2>Survey information</h2>
-            <p><strong>Greek Cypriot survey:</strong> Fieldwork was completed in the period 19/11/2024-19/01/2025 by the University Centre for Field Studies (N=800).</p>
-            <p><strong>Turkish Cypriot survey:</strong> Fieldwork was completed in the period 26/09/2025-17/10/2025 by Lipa Consultancy (N=813).</p>
+            <p><strong>Greek Cypriot survey:</strong> Fieldwork was completed in the period 19/11/2024-19/01/2025 by the University Centre for Field Studies (N=775).</p>
+            <p><strong>Turkish Cypriot survey:</strong> Fieldwork was completed in the period 26/09/2025-17/10/2025 by Lipa Consultancy (N=867).</p>
         </section>
         """,
         unsafe_allow_html=True,
