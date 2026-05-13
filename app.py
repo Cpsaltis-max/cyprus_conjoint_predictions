@@ -175,6 +175,13 @@ UI = {
         "ready_body": "When your selections are set, check whether the package reaches the 55% acceptability goal in both communities.",
         "package_instruction": 'Select one option from each attribute to build your solution package and then press the button "Check acceptability".',
         "check_acceptability": "Check acceptability",
+        "bottleneck_title": "Likely bottleneck to explore",
+        "below_target_sentence": "{community} is below target.",
+        "current_choice_sentence": "The current choice is {choice}.",
+        "try_attribute_sentence": "Try an alternative {attribute} option.",
+        "bottleneck_impact": "This looks like the most promising single attribute to experiment with next.",
+        "no_bottleneck_title": "No single clear bottleneck found",
+        "no_bottleneck_body": "Try changing a combination of attributes. A single attribute switch does not clearly move the package toward 55% in the community or communities below target.",
         "passed": "Passed",
         "below_target": "Below target",
         "gc": "Greek Cypriot Community",
@@ -285,6 +292,13 @@ UI["Ελληνικά"].update(
         "ready_body": "Όταν ολοκληρώσετε τις επιλογές σας, ελέγξτε αν το πακέτο φτάνει τον στόχο αποδοχής 55% και στις δύο κοινότητες.",
         "package_instruction": 'Επιλέξτε μία επιλογή από κάθε χαρακτηριστικό για να διαμορφώσετε το πακέτο λύσης σας και μετά πατήστε το κουμπί "Έλεγχος αποδοχής".',
         "check_acceptability": "Έλεγχος αποδοχής",
+        "bottleneck_title": "Πιθανό σημείο προς διερεύνηση",
+        "below_target_sentence": "Η {community} είναι κάτω από τον στόχο.",
+        "current_choice_sentence": "Η τρέχουσα επιλογή είναι {choice}.",
+        "try_attribute_sentence": "Δοκιμάστε μια εναλλακτική επιλογή στο χαρακτηριστικό {attribute}.",
+        "bottleneck_impact": "Αυτό φαίνεται να είναι το πιο υποσχόμενο χαρακτηριστικό για να πειραματιστείτε στη συνέχεια.",
+        "no_bottleneck_title": "Δεν βρέθηκε ένα σαφές μοναδικό εμπόδιο",
+        "no_bottleneck_body": "Δοκιμάστε να αλλάξετε συνδυασμό χαρακτηριστικών. Μια αλλαγή σε ένα μόνο χαρακτηριστικό δεν φαίνεται να φέρνει καθαρά το πακέτο πιο κοντά στο 55%.",
         "agreement_success_title": "Επιτεύχθηκε κοινή αποδοχή",
         "agreement_success_body": "Αυτό το πακέτο φτάνει τουλάχιστον 55% προβλεπόμενη στήριξη και στις δύο κοινότητες.",
         "agreement_success_detail": "Αυτός είναι ένας από τους 118 πιθανούς συνδυασμούς από σύνολο 8.000 που μπορούν να γίνουν αποδεκτοί από τουλάχιστον 55% των ψηφοφόρων και στις δύο κοινότητες σε δημοψήφισμα. Στο τέλος της σελίδας μπορείτε να δείτε τους 10 πιο δημοφιλείς συνδυασμούς.",
@@ -303,6 +317,13 @@ UI["Türkçe"].update(
         "ready_body": "Seçimleriniz hazır olduğunda, paketin iki toplumda da %55 kabul edilebilirlik hedefine ulaşıp ulaşmadığını kontrol edin.",
         "package_instruction": '"Kabul edilebilirliği kontrol et" düğmesine basmadan önce her özellikten bir seçenek seçerek çözüm paketinizi oluşturun.',
         "check_acceptability": "Kabul edilebilirliği kontrol et",
+        "bottleneck_title": "Keşfedilecek olası darboğaz",
+        "below_target_sentence": "{community} hedefin altında.",
+        "current_choice_sentence": "Mevcut seçim {choice}.",
+        "try_attribute_sentence": "{attribute} için alternatif bir seçenek deneyin.",
+        "bottleneck_impact": "Bir sonraki deneme için en umut verici tek özellik bu gibi görünüyor.",
+        "no_bottleneck_title": "Tek bir belirgin darboğaz bulunamadı",
+        "no_bottleneck_body": "Özelliklerin bir kombinasyonunu değiştirmeyi deneyin. Tek bir özellik değişikliği paketi hedefe açık biçimde yaklaştırmıyor.",
         "agreement_success_title": "Ortak kabul sağlandı",
         "agreement_success_body": "Bu paket iki toplumda da en az %55 tahmini desteğe ulaşıyor.",
         "agreement_success_detail": "Bu, referandumda her iki toplumdaki seçmenlerin en az %55'i tarafından kabul edilebilecek 8.000 olası kombinasyon içindeki 118 kombinasyondan biridir. Sayfanın sonunda en popüler 10 kombinasyonu görebilirsiniz.",
@@ -515,22 +536,24 @@ def render_agreement_status(text: dict[str, object], gc_support: float, tc_suppo
     tc_status = support_status(tc_support)
     passed = text_value(text, "passed", "Passed")
     below_target = text_value(text, "below_target", "Below target")
+    gc_mark = "&#10003;" if gc_status == "passed" else "&#9679;"
+    tc_mark = "&#10003;" if tc_status == "passed" else "&#9679;"
+    gc_text = passed if gc_status == "passed" else below_target
+    tc_text = passed if tc_status == "passed" else below_target
 
     st.markdown(
-        f"""
-        <section class="agreement-status agreement-status-{status_class}">
-            <div class="agreement-symbol">{icon}</div>
-            <div class="agreement-copy">
-                <div class="agreement-title">{title}</div>
-                <div class="agreement-body">{body}</div>
-                {detail_html}
-            </div>
-            <div class="agreement-badges">
-                <span class="agreement-badge agreement-badge-{gc_status}">{text['gc_support']}: {whole_pct(gc_support)} - {"&#10003;" if gc_status == "passed" else "&#9679;"} {passed if gc_status == "passed" else below_target}</span>
-                <span class="agreement-badge agreement-badge-{tc_status}">{text['tc_support']}: {whole_pct(tc_support)} - {"&#10003;" if tc_status == "passed" else "&#9679;"} {passed if tc_status == "passed" else below_target}</span>
-            </div>
-        </section>
-        """,
+        f"<section class='agreement-status agreement-status-{status_class}'>"
+        f"<div class='agreement-symbol'>{icon}</div>"
+        "<div class='agreement-copy'>"
+        f"<div class='agreement-title'>{title}</div>"
+        f"<div class='agreement-body'>{body}</div>"
+        f"{detail_html}"
+        "</div>"
+        "<div class='agreement-badges'>"
+        f"<span class='agreement-badge agreement-badge-{gc_status}'>{text['gc_support']}: {whole_pct(gc_support)} - {gc_mark} {gc_text}</span>"
+        f"<span class='agreement-badge agreement-badge-{tc_status}'>{text['tc_support']}: {whole_pct(tc_support)} - {tc_mark} {tc_text}</span>"
+        "</div>"
+        "</section>",
         unsafe_allow_html=True,
     )
     return success
@@ -588,12 +611,10 @@ def render_culprit_feedback(language: str, selected: dict[str, str], gc_support:
     text = UI[language]
     if not diagnostics:
         st.markdown(
-            """
-            <section class="culprit-card">
-                <div class="culprit-title">&#128269; No single clear bottleneck found</div>
-                <div class="culprit-body">Try changing a combination of attributes. A single attribute switch does not clearly move the package toward 55% in the community or communities below target.</div>
-            </section>
-            """,
+            "<section class='culprit-card'>"
+            f"<div class='culprit-title'>&#128269; {text_value(text, 'no_bottleneck_title', 'No single clear bottleneck found')}</div>"
+            f"<div class='culprit-body'>{text_value(text, 'no_bottleneck_body', 'Try changing a combination of attributes.')}</div>"
+            "</section>",
             unsafe_allow_html=True,
         )
         return
@@ -603,20 +624,22 @@ def render_culprit_feedback(language: str, selected: dict[str, str], gc_support:
         attribute = culprit["attribute"]
         current_level = culprit["current_level"]
         group_name = text["gc"] if culprit["group"] == "GC" else text["tc"]
+        current_choice = f"<strong>{level_label(language, current_level)}</strong>"
+        attribute_name = f"<strong>{text['attributes'][attribute]}</strong>"
         rows.append(
             "<div class='culprit-community-row'>"
-            f"<div><strong>{group_name}</strong> is below target.</div>"
-            f"<div>The current choice is <strong>{level_label(language, current_level)}</strong>.</div>"
-            f"<div>Try an alternative <strong>{text['attributes'][attribute]}</strong> option.</div>"
+            f"<div>{text_value(text, 'below_target_sentence', '{community} is below target.').format(community=f'<strong>{group_name}</strong>')}</div>"
+            f"<div>{text_value(text, 'current_choice_sentence', 'The current choice is {choice}.').format(choice=current_choice)}</div>"
+            f"<div>{text_value(text, 'try_attribute_sentence', 'Try an alternative {attribute} option.').format(attribute=attribute_name)}</div>"
             "</div>"
         )
 
     rows_html = "".join(rows)
     st.markdown(
         "<section class='culprit-card'>"
-        "<div class='culprit-title'>&#128269; Likely bottleneck to explore</div>"
+        f"<div class='culprit-title'>&#128269; {text_value(text, 'bottleneck_title', 'Likely bottleneck to explore')}</div>"
         f"<div class='culprit-body'>{rows_html}</div>"
-        "<div class='culprit-impact'>This looks like the most promising single attribute to experiment with next.</div>"
+        f"<div class='culprit-impact'>{text_value(text, 'bottleneck_impact', 'This looks like the most promising single attribute to experiment with next.')}</div>"
         "</section>",
         unsafe_allow_html=True,
     )
