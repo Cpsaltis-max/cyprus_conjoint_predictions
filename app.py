@@ -408,6 +408,10 @@ def text_value(text: dict[str, object], key: str, fallback: str) -> str:
     return str(value) if value else fallback
 
 
+def level_label(language: str, level: str) -> str:
+    return LABELS.get(language, {}).get(level, level)
+
+
 def support_status(value: float) -> str:
     return "passed" if value >= AGREEMENT_THRESHOLD else "below_target"
 
@@ -558,7 +562,7 @@ def render_culprit_feedback(language: str, selected: dict[str, str], gc_support:
         rows.append(
             "<div class='culprit-community-row'>"
             f"<div><strong>{group_name}</strong> is below target.</div>"
-            f"<div>The current choice is <strong>{LABELS[language][current_level]}</strong>.</div>"
+            f"<div>The current choice is <strong>{level_label(language, current_level)}</strong>.</div>"
             f"<div>Try an alternative <strong>{text['attributes'][attribute]}</strong> option.</div>"
             "</div>"
         )
@@ -578,7 +582,7 @@ def render_attribute_picker_header(language: str, attribute: str) -> None:
     color = ATTRIBUTE_COLORS[attribute]
     attribute_label = html.escape(UI[language]["attributes"][attribute])
     options = "".join(
-        f"<li>{html.escape(LABELS[language][level])}</li>"
+        f"<li>{html.escape(level_label(language, level))}</li>"
         for level in LEVELS[attribute]
     )
 
@@ -607,7 +611,7 @@ def package_key(attribute: str) -> str:
 def ensure_package_state() -> None:
     for attribute in ATTRIBUTES:
         key = package_key(attribute)
-        if key not in st.session_state:
+        if key not in st.session_state or st.session_state[key] not in LEVELS[attribute]:
             st.session_state[key] = DEFAULT_PACKAGE[attribute]
 
 
@@ -626,7 +630,7 @@ def render_package_popovers(language: str) -> dict[str, str]:
     for attribute in ATTRIBUTES:
         color = ATTRIBUTE_COLORS[attribute]
         attribute_label = html.escape(text["attributes"][attribute])
-        selected_label = html.escape(LABELS[language][st.session_state[package_key(attribute)]])
+        selected_label = html.escape(level_label(language, st.session_state[package_key(attribute)]))
 
         st.markdown(
             f"""
@@ -646,7 +650,7 @@ def render_package_popovers(language: str) -> dict[str, str]:
                 text["attributes"][attribute],
                 LEVELS[attribute],
                 key=package_key(attribute),
-                format_func=lambda level, lang=language: LABELS[lang][level],
+                format_func=lambda level, lang=language: level_label(lang, level),
                 label_visibility="collapsed",
             )
 
@@ -719,11 +723,11 @@ def package_sentence(language: str, package: dict[str, str], include_attribute_n
     if include_attribute_names:
         attributes = UI[language]["attributes"]
         return "; ".join(
-            f"{attributes[attribute]}: {LABELS[language][package[attribute]]}"
+            f"{attributes[attribute]}: {level_label(language, package[attribute])}"
             for attribute in ATTRIBUTES
         )
 
-    return "; ".join(LABELS[language][package[attribute]] for attribute in ATTRIBUTES)
+    return "; ".join(level_label(language, package[attribute]) for attribute in ATTRIBUTES)
 
 
 TC_ENGLISH_LEVELS = {
@@ -815,19 +819,19 @@ TC_TURKISH_LEVELS = {
 
 def narrative_level(language: str, group: str, attribute: str, level: str) -> str:
     if language == "English" and group == "GC":
-        text = GC_ENGLISH_LEVELS.get(attribute, {}).get(level, LABELS[language][level])
+        text = GC_ENGLISH_LEVELS.get(attribute, {}).get(level, level_label(language, level))
     elif language == "English" and group == "TC":
-        text = TC_ENGLISH_LEVELS.get(attribute, {}).get(level, LABELS[language][level])
+        text = TC_ENGLISH_LEVELS.get(attribute, {}).get(level, level_label(language, level))
     elif language == "Ελληνικά" and group == "GC":
-        text = GC_GREEK_LEVELS.get(attribute, {}).get(level, LABELS[language][level])
+        text = GC_GREEK_LEVELS.get(attribute, {}).get(level, level_label(language, level))
     elif language == "Ελληνικά" and group == "TC":
-        text = TC_GREEK_LEVELS.get(attribute, {}).get(level, LABELS[language][level])
+        text = TC_GREEK_LEVELS.get(attribute, {}).get(level, level_label(language, level))
     elif language == "Türkçe" and group == "GC":
-        text = GC_TURKISH_LEVELS.get(attribute, {}).get(level, LABELS[language][level])
+        text = GC_TURKISH_LEVELS.get(attribute, {}).get(level, level_label(language, level))
     elif language == "Türkçe" and group == "TC":
-        text = TC_TURKISH_LEVELS.get(attribute, {}).get(level, LABELS[language][level])
+        text = TC_TURKISH_LEVELS.get(attribute, {}).get(level, level_label(language, level))
     else:
-        text = LABELS[language][level]
+        text = level_label(language, level)
 
     if attribute == "territorial_arrangements":
         prefixes = {
