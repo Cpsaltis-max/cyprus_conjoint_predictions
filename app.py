@@ -168,6 +168,10 @@ UI = {
         "agreement_success_body": "This package reaches at least 55% predicted support in both communities.",
         "agreement_progress_title": "Keep negotiating",
         "agreement_progress_body": "The goal is 55% or higher predicted support in both communities.",
+        "language_hint": "Choose your language (English, Ελληνικά, Türkçe)",
+        "options": "Options",
+        "ready_title": "Ready to test the package?",
+        "ready_body": "When your selections are set, check whether the package reaches the 55% acceptability goal in both communities.",
         "package_instruction": 'Select one option from each attribute to build your solution package and then press the button "Check acceptability".',
         "check_acceptability": "Check acceptability",
         "passed": "Passed",
@@ -271,6 +275,40 @@ UI = {
         },
     },
 }
+
+UI["Ελληνικά"].update(
+    {
+        "language_hint": "Επιλέξτε γλώσσα (English, Ελληνικά, Türkçe)",
+        "options": "Επιλογές",
+        "ready_title": "Έτοιμοι να ελέγξετε το πακέτο;",
+        "ready_body": "Όταν ολοκληρώσετε τις επιλογές σας, ελέγξτε αν το πακέτο φτάνει τον στόχο αποδοχής 55% και στις δύο κοινότητες.",
+        "package_instruction": 'Επιλέξτε μία επιλογή από κάθε χαρακτηριστικό για να διαμορφώσετε το πακέτο λύσης σας και μετά πατήστε το κουμπί "Έλεγχος αποδοχής".',
+        "check_acceptability": "Έλεγχος αποδοχής",
+        "agreement_success_title": "Επιτεύχθηκε κοινή αποδοχή",
+        "agreement_success_body": "Αυτό το πακέτο φτάνει τουλάχιστον 55% προβλεπόμενη στήριξη και στις δύο κοινότητες.",
+        "agreement_progress_title": "Συνεχίστε τη διαπραγμάτευση",
+        "agreement_progress_body": "Ο στόχος είναι 55% ή υψηλότερη προβλεπόμενη στήριξη και στις δύο κοινότητες.",
+        "passed": "Πέρασε",
+        "below_target": "Κάτω από τον στόχο",
+    }
+)
+
+UI["Türkçe"].update(
+    {
+        "language_hint": "Dilinizi seçin (English, Ελληνικά, Türkçe)",
+        "options": "Seçenekler",
+        "ready_title": "Paketi test etmeye hazır mısınız?",
+        "ready_body": "Seçimleriniz hazır olduğunda, paketin iki toplumda da %55 kabul edilebilirlik hedefine ulaşıp ulaşmadığını kontrol edin.",
+        "package_instruction": '"Kabul edilebilirliği kontrol et" düğmesine basmadan önce her özellikten bir seçenek seçerek çözüm paketinizi oluşturun.',
+        "check_acceptability": "Kabul edilebilirliği kontrol et",
+        "agreement_success_title": "Ortak kabul sağlandı",
+        "agreement_success_body": "Bu paket iki toplumda da en az %55 tahmini desteğe ulaşıyor.",
+        "agreement_progress_title": "Müzakereye devam edin",
+        "agreement_progress_body": "Hedef, iki toplumda da %55 veya daha yüksek tahmini destektir.",
+        "passed": "Geçti",
+        "below_target": "Hedefin altında",
+    }
+)
 
 
 LABELS = {
@@ -592,7 +630,7 @@ def render_attribute_picker_header(language: str, attribute: str) -> None:
             <div class="attribute-picker-label">
                 <span class="attribute-color-dot"></span>
                 <span>{attribute_label}</span>
-                <span class="attribute-hover-cue">Options</span>
+                <span class="attribute-hover-cue">{html.escape(text_value(UI[language], "options", "Options"))}</span>
             </div>
             <div class="attribute-options-panel">
                 <div class="attribute-options-title">{attribute_label}</div>
@@ -645,7 +683,7 @@ def render_package_popovers(language: str) -> dict[str, str]:
             unsafe_allow_html=True,
         )
 
-        with st.popover("Options", use_container_width=True):
+        with st.popover(text_value(text, "options", "Options"), use_container_width=True):
             st.radio(
                 text["attributes"][attribute],
                 LEVELS[attribute],
@@ -1493,9 +1531,10 @@ render_logo_header()
 title_col, language_col = st.columns([3, 1], gap="large")
 with language_col:
     language = st.selectbox("Language / Γλώσσα / Dil", list(UI.keys()), label_visibility="collapsed")
-    st.caption("Choose your language (English, Ελληνικά, Türkçe)")
 text = UI[language]
 enable_sounds = True
+with language_col:
+    st.caption(text_value(text, "language_hint", "Choose your language (English, Ελληνικά, Türkçe)"))
 
 with title_col:
     st.title(text["title"])
@@ -1511,10 +1550,10 @@ joint_support = min(gc_support, tc_support)
 
 with feedback_col:
     st.markdown(
-        """
+        f"""
         <section class="acceptability-prompt">
-            <div class="acceptability-prompt-title">Ready to test the package?</div>
-            <div class="acceptability-prompt-body">When your selections are set, check whether the package reaches the 55% acceptability goal in both communities.</div>
+            <div class="acceptability-prompt-title">{text_value(text, "ready_title", "Ready to test the package?")}</div>
+            <div class="acceptability-prompt-body">{text_value(text, "ready_body", "When your selections are set, check whether the package reaches the 55% acceptability goal in both communities.")}</div>
         </section>
         """,
         unsafe_allow_html=True,
