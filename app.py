@@ -475,6 +475,90 @@ def render_agreement_status(text: dict[str, object], gc_support: float, tc_suppo
     return success
 
 
+def diagnose_culprit(selected: dict[str, str], gc_support: float, tc_support: float) -> dict[str, object] | None:
+    current_gap = {
+        "GC": max(0.0, AGREEMENT_THRESHOLD - gc_support),
+        "TC": max(0.0, AGREEMENT_THRESHOLD - tc_support),
+    }
+    failed_groups = [group for group, gap in current_gap.items() if gap > 0]
+    if not failed_groups:
+        return None
+
+    baseline_gap = sum(current_gap[group] for group in failed_groups)
+    best: dict[str, object] | None = None
+
+    for attribute in ATTRIBUTES:
+        current_level = selected[attribute]
+        for candidate_level in LEVELS[attribute]:
+            if candidate_level == current_level:
+                continue
+
+            candidate = dict(selected)
+            candidate[attribute] = candidate_level
+            candidate_gc = predict("GC", "forced", candidate)
+            candidate_tc = predict("TC", "forced", candidate)
+            candidate_gap = {
+                "GC": max(0.0, AGREEMENT_THRESHOLD - candidate_gc),
+                "TC": max(0.0, AGREEMENT_THRESHOLD - candidate_tc),
+            }
+            gap_reduction = baseline_gap - sum(candidate_gap[group] for group in failed_groups)
+            joint_after = min(candidate_gc, candidate_tc)
+
+            if best is None or (gap_reduction, joint_after) > (best["gap_reduction"], best["joint_after"]):
+                best = {
+                    "attribute": attribute,
+                    "current_level": current_level,
+                    "candidate_level": candidate_level,
+                    "gc_after": candidate_gc,
+                    "tc_after": candidate_tc,
+                    "joint_after": joint_after,
+                    "gap_reduction": gap_reduction,
+                    "failed_groups": failed_groups,
+                }
+
+    if best and best["gap_reduction"] > 0:
+        return best
+    return None
+
+
+def render_culprit_feedback(language: str, selected: dict[str, str], gc_support: float, tc_support: float) -> None:
+    culprit = diagnose_culprit(selected, gc_support, tc_support)
+    text = UI[language]
+    if culprit is None:
+        st.markdown(
+            """
+            <section class="culprit-card">
+                <div class="culprit-title">&#128269; No single clear bottleneck found</div>
+                <div class="culprit-body">Try changing a combination of attributes. A single attribute switch does not clearly move the package toward 55% in the community or communities below target.</div>
+            </section>
+            """,
+            unsafe_allow_html=True,
+        )
+        return
+
+    attribute = culprit["attribute"]
+    current_level = culprit["current_level"]
+    candidate_level = culprit["candidate_level"]
+    failed_names = ", ".join(text["gc"] if group == "GC" else text["tc"] for group in culprit["failed_groups"])
+
+    st.markdown(
+        f"""
+        <section class="culprit-card">
+            <div class="culprit-title">&#128269; Likely bottleneck: {text["attributes"][attribute]}</div>
+            <div class="culprit-body">
+                The community below target is: <strong>{failed_names}</strong>.
+                The current choice is <strong>{LABELS[language][current_level]}</strong>.
+                Try an alternative such as <strong>{LABELS[language][candidate_level]}</strong>.
+            </div>
+            <div class="culprit-impact">
+                This looks like the most promising single attribute to experiment with next.
+            </div>
+        </section>
+        """,
+        unsafe_allow_html=True,
+    )
+
+
 def render_kpi_card(label: str, value: float) -> None:
     st.markdown(
         f"""
@@ -924,6 +1008,29 @@ st.markdown(
         border-color: #f0cf83;
         color: #8a5b00;
     }
+    .culprit-card {
+        border: 1px solid #e4d6b2;
+        border-radius: 8px;
+        padding: 1rem 1.15rem;
+        margin: 0.65rem 0 0.35rem 0;
+        background: #fffdf7;
+    }
+    .culprit-title {
+        color: #17212b;
+        font-size: 1.04rem;
+        font-weight: 760;
+        line-height: 1.3;
+    }
+    .culprit-body,
+    .culprit-impact {
+        color: #475569;
+        font-size: 0.96rem;
+        line-height: 1.45;
+        margin-top: 0.38rem;
+    }
+    .culprit-impact {
+        color: #334155;
+    }
     .result-card {
         min-height: 275px;
         height: 275px;
@@ -1137,6 +1244,8 @@ previous_agreement_state = st.session_state.get("agreement_sound_state")
 if enable_sounds and previous_agreement_state is not None and previous_agreement_state != current_agreement_state:
     play_agreement_tone(current_agreement_state)
 st.session_state.agreement_sound_state = current_agreement_state
+if not shared_success:
+    render_culprit_feedback(language, selected_levels, gc_support, tc_support)
 
 st.markdown("<div style='height: 0.75rem;'></div>", unsafe_allow_html=True)
 st.subheader(text["results_title"])
@@ -1154,4 +1263,6 @@ render_viable_packages(language)
 render_project_information()
 
 st.markdown(f"<p class='method-note'>{text['method_note']}</p>", unsafe_allow_html=True)
+
+
 
