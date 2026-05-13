@@ -1,4 +1,5 @@
 import base64
+import html
 import io
 import math
 import struct
@@ -87,6 +88,16 @@ DEFAULT_PACKAGE = {
 
 
 AGREEMENT_THRESHOLD = 0.55
+
+
+ATTRIBUTE_COLORS = {
+    "political_structure": "#ef4444",
+    "territorial_arrangements": "#f59e0b",
+    "compensation_property": "#10b981",
+    "security_guarantees": "#3b82f6",
+    "judicial_system": "#8b5cf6",
+    "energy_cooperation": "#06b6d4",
+}
 
 
 MODEL = {
@@ -558,6 +569,32 @@ def render_culprit_feedback(language: str, selected: dict[str, str], gc_support:
     )
 
 
+def render_attribute_picker_header(language: str, attribute: str) -> None:
+    color = ATTRIBUTE_COLORS[attribute]
+    attribute_label = html.escape(UI[language]["attributes"][attribute])
+    options = "".join(
+        f"<li>{html.escape(LABELS[language][level])}</li>"
+        for level in LEVELS[attribute]
+    )
+
+    st.sidebar.markdown(
+        f"""
+        <div class="attribute-picker" style="--attribute-color: {color};">
+            <div class="attribute-picker-label">
+                <span class="attribute-color-dot"></span>
+                <span>{attribute_label}</span>
+                <span class="attribute-hover-cue">Options</span>
+            </div>
+            <div class="attribute-options-panel">
+                <div class="attribute-options-title">{attribute_label}</div>
+                <ul>{options}</ul>
+            </div>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+
+
 def render_kpi_card(label: str, value: float) -> None:
     st.markdown(
         f"""
@@ -911,13 +948,99 @@ st.markdown(
         text-align: center;
     }
     [data-testid="stSidebar"] {
-        background: #f4f5f7;
-        border-right: 1px solid #dedede;
+        background:
+            linear-gradient(180deg, rgba(255, 255, 255, 0.96), rgba(248, 250, 252, 0.93)),
+            linear-gradient(135deg, rgba(239, 68, 68, 0.14), rgba(16, 185, 129, 0.10) 34%, rgba(59, 130, 246, 0.12) 68%, rgba(139, 92, 246, 0.12));
+        border-right: 1px solid #d7dee8;
+    }
+    [data-testid="stSidebar"],
+    [data-testid="stSidebar"] > div,
+    [data-testid="stSidebar"] [data-testid="stSidebarContent"] {
+        overflow: visible;
     }
     [data-testid="stSidebar"] h2,
     [data-testid="stSidebar"] label {
         color: #1f2933;
         font-weight: 700 !important;
+    }
+    [data-testid="stSidebar"] h2 {
+        margin-top: 1.4rem;
+    }
+    .attribute-picker {
+        position: relative;
+        margin: 1.05rem 0 0.38rem 0;
+        z-index: 20;
+    }
+    .attribute-picker:hover {
+        z-index: 200;
+    }
+    .attribute-picker-label {
+        display: flex;
+        align-items: center;
+        gap: 0.55rem;
+        border: 1px solid color-mix(in srgb, var(--attribute-color) 42%, #ffffff);
+        border-left: 6px solid var(--attribute-color);
+        border-radius: 8px;
+        padding: 0.62rem 0.7rem;
+        background: color-mix(in srgb, var(--attribute-color) 10%, #ffffff);
+        color: #17212b;
+        font-size: 0.95rem;
+        font-weight: 780;
+        line-height: 1.25;
+        box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+    }
+    .attribute-color-dot {
+        flex: 0 0 auto;
+        width: 0.72rem;
+        height: 0.72rem;
+        border-radius: 999px;
+        background: var(--attribute-color);
+        box-shadow: 0 0 0 3px color-mix(in srgb, var(--attribute-color) 18%, transparent);
+    }
+    .attribute-hover-cue {
+        margin-left: auto;
+        border-radius: 999px;
+        padding: 0.2rem 0.48rem;
+        background: rgba(255, 255, 255, 0.78);
+        color: #475569;
+        font-size: 0.7rem;
+        font-weight: 800;
+        text-transform: uppercase;
+    }
+    .attribute-options-panel {
+        position: absolute;
+        top: 0;
+        left: calc(100% + 1rem);
+        display: none;
+        width: min(430px, calc(100vw - 390px));
+        max-height: 360px;
+        overflow: auto;
+        border: 1px solid color-mix(in srgb, var(--attribute-color) 42%, #d8dee4);
+        border-top: 5px solid var(--attribute-color);
+        border-radius: 8px;
+        padding: 0.88rem 1rem;
+        background: #ffffff;
+        box-shadow: 0 18px 40px rgba(15, 23, 42, 0.20);
+    }
+    .attribute-picker:hover .attribute-options-panel {
+        display: block;
+    }
+    .attribute-options-title {
+        color: #111827;
+        font-size: 0.98rem;
+        font-weight: 820;
+        line-height: 1.25;
+        margin-bottom: 0.48rem;
+    }
+    .attribute-options-panel ul {
+        margin: 0;
+        padding-left: 1.1rem;
+    }
+    .attribute-options-panel li {
+        color: #334155;
+        font-size: 0.9rem;
+        line-height: 1.35;
+        padding: 0.28rem 0;
     }
     .kpi-card {
         min-height: 92px;
@@ -1175,6 +1298,13 @@ st.markdown(
         margin-bottom: 2.5rem;
     }
     @media (max-width: 860px) {
+        .attribute-options-panel {
+            position: static;
+            width: 100%;
+            max-height: 280px;
+            margin-top: 0.45rem;
+            box-shadow: 0 10px 26px rgba(15, 23, 42, 0.14);
+        }
         .agreement-status {
             grid-template-columns: auto 1fr;
         }
@@ -1214,12 +1344,14 @@ st.sidebar.header(text["package"])
 selected_levels = {}
 
 for attribute in ATTRIBUTES:
+    render_attribute_picker_header(language, attribute)
     selected_levels[attribute] = st.sidebar.selectbox(
         text["attributes"][attribute],
         LEVELS[attribute],
         index=LEVELS[attribute].index(DEFAULT_PACKAGE[attribute]),
         format_func=lambda level, lang=language: LABELS[lang][level],
         key=attribute,
+        label_visibility="collapsed",
     )
 
 gc_support = predict("GC", "forced", selected_levels)
@@ -1262,3 +1394,4 @@ render_viable_packages(language)
 render_project_information()
 
 st.markdown(f"<p class='method-note'>{text['method_note']}</p>", unsafe_allow_html=True)
+
