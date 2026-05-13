@@ -1,3 +1,8 @@
+import base64
+import io
+import math
+import struct
+import wave
 from itertools import product
 from pathlib import Path
 
@@ -81,6 +86,9 @@ DEFAULT_PACKAGE = {
 }
 
 
+AGREEMENT_THRESHOLD = 0.55
+
+
 MODEL = {
     "GC": {
         "n_respondents": 775,
@@ -144,6 +152,13 @@ UI = {
         "viable_title": "Packages above 55% in both communities",
         "viable_intro": "{count} of {total} possible packages reach at least 55% predicted support in both communities. The strongest joint-support packages are:",
         "viable_none": "No package in this design reaches at least 55% predicted support in both communities.",
+        "sound_toggle": "Enable sound cues",
+        "agreement_success_title": "Shared agreement achieved",
+        "agreement_success_body": "This package reaches at least 55% predicted support in both communities.",
+        "agreement_progress_title": "Keep negotiating",
+        "agreement_progress_body": "The goal is 55% or higher predicted support in both communities.",
+        "passed": "Passed",
+        "below_target": "Below target",
         "gc": "Greek Cypriot Community",
         "tc": "Turkish Cypriot Community",
         "sample": "Sample",
@@ -375,6 +390,91 @@ def whole_pct(value: float) -> str:
     return f"{value * 100:.0f}%"
 
 
+def text_value(text: dict[str, object], key: str, fallback: str) -> str:
+    value = text.get(key)
+    return str(value) if value else fallback
+
+
+def support_status(value: float) -> str:
+    return "passed" if value >= AGREEMENT_THRESHOLD else "below_target"
+
+
+def play_agreement_tone(kind: str) -> None:
+    if kind not in {"success", "failure"}:
+        return
+
+    sequence = [(523.25, 0.11), (659.25, 0.11), (783.99, 0.18)] if kind == "success" else [(220, 0.14), (164.81, 0.20)]
+    sample_rate = 44100
+    amplitude = 0.18 if kind == "success" else 0.11
+    silence = int(sample_rate * 0.035)
+    frames = []
+
+    for frequency, duration in sequence:
+        sample_count = int(sample_rate * duration)
+        for sample_index in range(sample_count):
+            fade = min(1.0, sample_index / max(1, sample_rate * 0.015), (sample_count - sample_index) / max(1, sample_rate * 0.04))
+            value = int(32767 * amplitude * fade * math.sin(2 * math.pi * frequency * sample_index / sample_rate))
+            frames.append(struct.pack("<h", value))
+        frames.extend(struct.pack("<h", 0) for _ in range(silence))
+
+    buffer = io.BytesIO()
+    with wave.open(buffer, "wb") as wav_file:
+        wav_file.setnchannels(1)
+        wav_file.setsampwidth(2)
+        wav_file.setframerate(sample_rate)
+        wav_file.writeframes(b"".join(frames))
+
+    encoded = base64.b64encode(buffer.getvalue()).decode("ascii")
+    st.markdown(
+        f"""
+        <audio autoplay style="display:none">
+            <source src="data:audio/wav;base64,{encoded}" type="audio/wav">
+        </audio>
+        """,
+        unsafe_allow_html=True,
+    )
+
+
+def render_agreement_status(text: dict[str, object], gc_support: float, tc_support: float) -> bool:
+    success = gc_support >= AGREEMENT_THRESHOLD and tc_support >= AGREEMENT_THRESHOLD
+    status_class = "success" if success else "progress"
+    icon = "&#129309;" if success else "&#127919;"
+    title = text_value(
+        text,
+        "agreement_success_title" if success else "agreement_progress_title",
+        "Shared agreement achieved" if success else "Keep negotiating",
+    )
+    body = text_value(
+        text,
+        "agreement_success_body" if success else "agreement_progress_body",
+        "This package reaches at least 55% predicted support in both communities."
+        if success
+        else "The goal is 55% or higher predicted support in both communities.",
+    )
+    gc_status = support_status(gc_support)
+    tc_status = support_status(tc_support)
+    passed = text_value(text, "passed", "Passed")
+    below_target = text_value(text, "below_target", "Below target")
+
+    st.markdown(
+        f"""
+        <section class="agreement-status agreement-status-{status_class}">
+            <div class="agreement-symbol">{icon}</div>
+            <div class="agreement-copy">
+                <div class="agreement-title">{title}</div>
+                <div class="agreement-body">{body}</div>
+            </div>
+            <div class="agreement-badges">
+                <span class="agreement-badge agreement-badge-{gc_status}">{text['gc_support']}: {whole_pct(gc_support)} - {"&#10003;" if gc_status == "passed" else "&#9679;"} {passed if gc_status == "passed" else below_target}</span>
+                <span class="agreement-badge agreement-badge-{tc_status}">{text['tc_support']}: {whole_pct(tc_support)} - {"&#10003;" if tc_status == "passed" else "&#9679;"} {passed if tc_status == "passed" else below_target}</span>
+            </div>
+        </section>
+        """,
+        unsafe_allow_html=True,
+    )
+    return success
+
+
 def render_kpi_card(label: str, value: float) -> None:
     st.markdown(
         f"""
@@ -600,7 +700,7 @@ def render_extreme_narratives(language: str) -> None:
     )
 
 
-def find_viable_packages(threshold: float = 0.55) -> list[dict[str, object]]:
+def find_viable_packages(threshold: float = AGREEMENT_THRESHOLD) -> list[dict[str, object]]:
     viable = []
 
     for package in all_packages():
@@ -661,8 +761,8 @@ def render_project_information() -> None:
         """
         <section class="info-section">
             <h2>Survey information</h2>
-            <p><strong>Greek Cypriot survey:</strong> Fieldwork was completed in the period 19/11/2024-19/01/2025 by the University Centre for Field Studies (N=775).</p>
-            <p><strong>Turkish Cypriot survey:</strong> Fieldwork was completed in the period 26/09/2025-17/10/2025 by Lipa Consultancy (N=867).</p>
+            <p><strong>Greek Cypriot survey:</strong> Fieldwork was completed in the period 19/11/2024-19/01/2025 by the University Centre for Field Studies (N=800).</p>
+            <p><strong>Turkish Cypriot survey:</strong> Fieldwork was completed in the period 26/09/2025-17/10/2025 by Lipa Consultancy (N=813).</p>
         </section>
         """,
         unsafe_allow_html=True,
@@ -756,6 +856,73 @@ st.markdown(
         font-weight: 750;
         line-height: 1.1;
         margin-top: 0.35rem;
+    }
+    .agreement-status {
+        display: grid;
+        grid-template-columns: auto minmax(220px, 1fr) auto;
+        align-items: center;
+        gap: 1rem;
+        border: 1px solid #d8dee4;
+        border-left-width: 6px;
+        border-radius: 8px;
+        padding: 1rem 1.15rem;
+        margin: 1rem 0 0.35rem 0;
+        background: #ffffff;
+    }
+    .agreement-status-success {
+        border-left-color: #1f9d55;
+        background: #f6fcf8;
+    }
+    .agreement-status-progress {
+        border-left-color: #c28a13;
+        background: #fffaf0;
+    }
+    .agreement-symbol {
+        display: grid;
+        place-items: center;
+        width: 3.15rem;
+        height: 3.15rem;
+        border-radius: 999px;
+        background: rgba(255, 255, 255, 0.74);
+        font-size: 1.75rem;
+        line-height: 1;
+    }
+    .agreement-title {
+        color: #17212b;
+        font-size: 1.16rem;
+        font-weight: 760;
+        line-height: 1.25;
+    }
+    .agreement-body {
+        color: #475569;
+        font-size: 0.96rem;
+        line-height: 1.4;
+        margin-top: 0.18rem;
+    }
+    .agreement-badges {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: flex-end;
+        gap: 0.45rem;
+    }
+    .agreement-badge {
+        border: 1px solid #d8dee4;
+        border-radius: 999px;
+        padding: 0.42rem 0.65rem;
+        background: #ffffff;
+        color: #334155;
+        font-size: 0.86rem;
+        font-weight: 700;
+        line-height: 1.15;
+        white-space: nowrap;
+    }
+    .agreement-badge-passed {
+        border-color: #a9d7b8;
+        color: #166534;
+    }
+    .agreement-badge-below_target {
+        border-color: #f0cf83;
+        color: #8a5b00;
     }
     .result-card {
         min-height: 275px;
@@ -902,6 +1069,16 @@ st.markdown(
         margin-bottom: 2.5rem;
     }
     @media (max-width: 860px) {
+        .agreement-status {
+            grid-template-columns: auto 1fr;
+        }
+        .agreement-badges {
+            grid-column: 1 / -1;
+            justify-content: flex-start;
+        }
+        .agreement-badge {
+            white-space: normal;
+        }
         h1 {
             font-size: 1.8rem !important;
             text-align: left;
@@ -922,6 +1099,7 @@ st.markdown(
 
 language = st.sidebar.selectbox("Language / Γλώσσα / Dil", list(UI.keys()))
 text = UI[language]
+enable_sounds = st.sidebar.toggle(text_value(text, "sound_toggle", "Enable sound cues"), value=True)
 
 render_logo_header()
 st.title(text["title"])
@@ -952,6 +1130,13 @@ with kpi_mid:
 
 with kpi_right:
     render_kpi_card(text["tc_support"], tc_support)
+
+shared_success = render_agreement_status(text, gc_support, tc_support)
+current_agreement_state = "success" if shared_success else "failure"
+previous_agreement_state = st.session_state.get("agreement_sound_state")
+if enable_sounds and previous_agreement_state is not None and previous_agreement_state != current_agreement_state:
+    play_agreement_tone(current_agreement_state)
+st.session_state.agreement_sound_state = current_agreement_state
 
 st.markdown("<div style='height: 0.75rem;'></div>", unsafe_allow_html=True)
 st.subheader(text["results_title"])
