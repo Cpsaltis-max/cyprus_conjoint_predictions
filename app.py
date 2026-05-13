@@ -1029,6 +1029,9 @@ st.markdown(
     [data-testid="stSidebar"] h2 {
         margin-top: 1.4rem;
     }
+    [data-testid="stSidebar"] {
+        display: none;
+    }
     .attribute-picker {
         position: relative;
         margin: 1.05rem 0 0.38rem 0;
@@ -1108,9 +1111,9 @@ st.markdown(
     .popover-attribute-card {
         border: 1px solid color-mix(in srgb, var(--attribute-color) 32%, #d8dee4);
         border-left: 6px solid var(--attribute-color);
-        border-radius: 8px;
-        padding: 0.34rem 0.58rem;
-        margin: 0.18rem 0 0.05rem 0;
+        border-radius: 7px 7px 0 0;
+        padding: 0.28rem 0.5rem;
+        margin: 0.04rem 0 0 0;
         background: color-mix(in srgb, var(--attribute-color) 8%, #ffffff);
         box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
     }
@@ -1119,15 +1122,15 @@ st.markdown(
         align-items: center;
         gap: 0.45rem;
         color: #17212b;
-        font-size: 0.86rem;
+        font-size: 0.82rem;
         font-weight: 820;
-        line-height: 1.18;
+        line-height: 1.12;
     }
     .popover-selected-level {
         color: #475569;
-        font-size: 0.74rem;
-        line-height: 1.18;
-        margin-top: 0.18rem;
+        font-size: 0.68rem;
+        line-height: 1.12;
+        margin-top: 0.12rem;
     }
     .package-instruction {
         color: #475569;
@@ -1136,17 +1139,18 @@ st.markdown(
         margin: -0.3rem 0 0.35rem 0;
     }
     div[data-testid="stPopover"] {
-        margin-bottom: 0.18rem;
+        margin-bottom: 0.08rem;
     }
     div[data-testid="stPopover"] button {
-        min-height: 2rem;
-        height: 2rem;
-        padding: 0.12rem 0.5rem;
-        font-size: 0.84rem;
+        min-height: 1.72rem;
+        height: 1.72rem;
+        border-radius: 0 0 7px 7px;
+        padding: 0.05rem 0.45rem;
+        font-size: 0.78rem;
     }
     .attribute-color-dot {
-        width: 0.62rem;
-        height: 0.62rem;
+        width: 0.54rem;
+        height: 0.54rem;
     }
     .acceptability-prompt {
         border: 1px solid #d8e2ef;
@@ -1480,12 +1484,16 @@ st.markdown(
 )
 
 
-language = st.sidebar.selectbox("Language / Γλώσσα / Dil", list(UI.keys()))
-text = UI[language]
-enable_sounds = st.sidebar.toggle(text_value(text, "sound_toggle", "Enable sound cues"), value=True)
-
 render_logo_header()
-st.title(text["title"])
+
+title_col, language_col = st.columns([3, 1], gap="large")
+with language_col:
+    language = st.selectbox("Language / Γλώσσα / Dil", list(UI.keys()), label_visibility="collapsed")
+text = UI[language]
+enable_sounds = True
+
+with title_col:
+    st.title(text["title"])
 
 package_col, feedback_col = st.columns([1, 1], gap="large")
 
