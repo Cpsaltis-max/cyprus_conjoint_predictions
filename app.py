@@ -1092,8 +1092,8 @@ st.markdown(
         border: 1px solid color-mix(in srgb, var(--attribute-color) 32%, #d8dee4);
         border-left: 7px solid var(--attribute-color);
         border-radius: 8px;
-        padding: 0.78rem 0.85rem;
-        margin: 0.85rem 0 0.32rem 0;
+        padding: 0.68rem 0.78rem;
+        margin: 0.7rem 0 0.25rem 0;
         background: color-mix(in srgb, var(--attribute-color) 8%, #ffffff);
         box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
     }
@@ -1108,7 +1108,7 @@ st.markdown(
     }
     .popover-selected-level {
         color: #475569;
-        font-size: 0.9rem;
+        font-size: 0.86rem;
         line-height: 1.35;
         margin-top: 0.42rem;
     }
@@ -1417,34 +1417,38 @@ enable_sounds = st.sidebar.toggle(text_value(text, "sound_toggle", "Enable sound
 render_logo_header()
 st.title(text["title"])
 
-selected_levels = render_package_popovers(language)
+package_col, feedback_col = st.columns([1, 1], gap="large")
+
+with package_col:
+    selected_levels = render_package_popovers(language)
 
 gc_support = predict("GC", "forced", selected_levels)
 tc_support = predict("TC", "forced", selected_levels)
 joint_support = min(gc_support, tc_support)
 
-kpi_left, kpi_mid, kpi_right = st.columns([1, 1, 1], gap="large")
+with feedback_col:
+    st.subheader(text["results_title"])
+    kpi_left, kpi_mid, kpi_right = st.columns([1, 1, 1], gap="small")
 
-with kpi_left:
-    render_kpi_card(text["gc_support"], gc_support)
+    with kpi_left:
+        render_kpi_card(text["gc_support"], gc_support)
 
-with kpi_mid:
-    render_kpi_card(text["joint_support"], joint_support)
+    with kpi_mid:
+        render_kpi_card(text["joint_support"], joint_support)
 
-with kpi_right:
-    render_kpi_card(text["tc_support"], tc_support)
+    with kpi_right:
+        render_kpi_card(text["tc_support"], tc_support)
 
-shared_success = render_agreement_status(text, gc_support, tc_support)
-current_agreement_state = "success" if shared_success else "failure"
-previous_agreement_state = st.session_state.get("agreement_sound_state")
-if enable_sounds and previous_agreement_state is not None and previous_agreement_state != current_agreement_state:
-    play_agreement_tone(current_agreement_state)
-st.session_state.agreement_sound_state = current_agreement_state
-if not shared_success:
-    render_culprit_feedback(language, selected_levels, gc_support, tc_support)
+    shared_success = render_agreement_status(text, gc_support, tc_support)
+    current_agreement_state = "success" if shared_success else "failure"
+    previous_agreement_state = st.session_state.get("agreement_sound_state")
+    if enable_sounds and previous_agreement_state is not None and previous_agreement_state != current_agreement_state:
+        play_agreement_tone(current_agreement_state)
+    st.session_state.agreement_sound_state = current_agreement_state
+    if not shared_success:
+        render_culprit_feedback(language, selected_levels, gc_support, tc_support)
 
 st.markdown("<div style='height: 0.75rem;'></div>", unsafe_allow_html=True)
-st.subheader(text["results_title"])
 left, right = st.columns([1, 1], gap="large")
 
 with left:
