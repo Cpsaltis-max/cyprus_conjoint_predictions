@@ -1489,6 +1489,7 @@ render_logo_header()
 title_col, language_col = st.columns([3, 1], gap="large")
 with language_col:
     language = st.selectbox("Language / Γλώσσα / Dil", list(UI.keys()), label_visibility="collapsed")
+    st.caption("Choose your language (English, Ελληνικά, Türkçe)")
 text = UI[language]
 enable_sounds = True
 
