@@ -556,27 +556,20 @@ def render_culprit_feedback(language: str, selected: dict[str, str], gc_support:
         current_level = culprit["current_level"]
         group_name = text["gc"] if culprit["group"] == "GC" else text["tc"]
         rows.append(
-            f"""
-            <div class="culprit-community-row">
-                <div><strong>{group_name}</strong> is below target.</div>
-                <div>The current choice is <strong>{LABELS[language][current_level]}</strong>.</div>
-                <div>Try an alternative <strong>{text["attributes"][attribute]}</strong> option.</div>
-            </div>
-            """
+            "<div class='culprit-community-row'>"
+            f"<div><strong>{group_name}</strong> is below target.</div>"
+            f"<div>The current choice is <strong>{LABELS[language][current_level]}</strong>.</div>"
+            f"<div>Try an alternative <strong>{text['attributes'][attribute]}</strong> option.</div>"
+            "</div>"
         )
 
+    rows_html = "".join(rows)
     st.markdown(
-        f"""
-        <section class="culprit-card">
-            <div class="culprit-title">&#128269; Likely bottleneck to explore</div>
-            <div class="culprit-body">
-                {"".join(rows)}
-            </div>
-            <div class="culprit-impact">
-                This looks like the most promising single attribute to experiment with next.
-            </div>
-        </section>
-        """,
+        "<section class='culprit-card'>"
+        "<div class='culprit-title'>&#128269; Likely bottleneck to explore</div>"
+        f"<div class='culprit-body'>{rows_html}</div>"
+        "<div class='culprit-impact'>This looks like the most promising single attribute to experiment with next.</div>"
+        "</section>",
         unsafe_allow_html=True,
     )
 
@@ -1114,36 +1107,46 @@ st.markdown(
     }
     .popover-attribute-card {
         border: 1px solid color-mix(in srgb, var(--attribute-color) 32%, #d8dee4);
-        border-left: 7px solid var(--attribute-color);
+        border-left: 6px solid var(--attribute-color);
         border-radius: 8px;
-        padding: 0.48rem 0.68rem;
-        margin: 0.38rem 0 0.12rem 0;
+        padding: 0.34rem 0.58rem;
+        margin: 0.18rem 0 0.05rem 0;
         background: color-mix(in srgb, var(--attribute-color) 8%, #ffffff);
         box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
     }
     .popover-attribute-label {
         display: flex;
         align-items: center;
-        gap: 0.55rem;
+        gap: 0.45rem;
         color: #17212b;
-        font-size: 0.92rem;
+        font-size: 0.86rem;
         font-weight: 820;
-        line-height: 1.3;
+        line-height: 1.18;
     }
     .popover-selected-level {
         color: #475569;
-        font-size: 0.8rem;
-        line-height: 1.25;
-        margin-top: 0.26rem;
+        font-size: 0.74rem;
+        line-height: 1.18;
+        margin-top: 0.18rem;
     }
     .package-instruction {
         color: #475569;
-        font-size: 0.94rem;
-        line-height: 1.4;
-        margin: -0.25rem 0 0.55rem 0;
+        font-size: 0.88rem;
+        line-height: 1.32;
+        margin: -0.3rem 0 0.35rem 0;
     }
     div[data-testid="stPopover"] {
-        margin-bottom: 0.34rem;
+        margin-bottom: 0.18rem;
+    }
+    div[data-testid="stPopover"] button {
+        min-height: 2rem;
+        height: 2rem;
+        padding: 0.12rem 0.5rem;
+        font-size: 0.84rem;
+    }
+    .attribute-color-dot {
+        width: 0.62rem;
+        height: 0.62rem;
     }
     .acceptability-prompt {
         border: 1px solid #d8e2ef;
