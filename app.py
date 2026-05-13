@@ -612,10 +612,12 @@ def render_package_popovers(language: str) -> dict[str, str]:
     ensure_package_state()
     text = UI[language]
     previous_selected = {attribute: st.session_state[package_key(attribute)] for attribute in ATTRIBUTES}
+    fallback_instruction = 'Select one option from each attribute to build your solution package and then press the button "Check acceptability".'
+    package_instruction = text_value(text, "package_instruction", fallback_instruction)
 
     st.subheader(text["package"])
     st.markdown(
-        f"<p class='package-instruction'>{text_value(text, 'package_instruction', 'Select one option from each attribute to build your solution package and then press the button \"Check acceptability\".')}</p>",
+        f"<p class='package-instruction'>{package_instruction}</p>",
         unsafe_allow_html=True,
     )
     for attribute in ATTRIBUTES:
