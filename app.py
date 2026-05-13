@@ -538,7 +538,6 @@ def render_culprit_feedback(language: str, selected: dict[str, str], gc_support:
 
     attribute = culprit["attribute"]
     current_level = culprit["current_level"]
-    candidate_level = culprit["candidate_level"]
     failed_names = ", ".join(text["gc"] if group == "GC" else text["tc"] for group in culprit["failed_groups"])
 
     st.markdown(
@@ -548,7 +547,7 @@ def render_culprit_feedback(language: str, selected: dict[str, str], gc_support:
             <div class="culprit-body">
                 The community below target is: <strong>{failed_names}</strong>.
                 The current choice is <strong>{LABELS[language][current_level]}</strong>.
-                Try an alternative such as <strong>{LABELS[language][candidate_level]}</strong>.
+                Try an alternative <strong>{text["attributes"][attribute]}</strong> option.
             </div>
             <div class="culprit-impact">
                 This looks like the most promising single attribute to experiment with next.
@@ -1263,6 +1262,3 @@ render_viable_packages(language)
 render_project_information()
 
 st.markdown(f"<p class='method-note'>{text['method_note']}</p>", unsafe_allow_html=True)
-
-
-
