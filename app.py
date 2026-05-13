@@ -166,6 +166,7 @@ UI = {
         "sound_toggle": "Enable sound cues",
         "agreement_success_title": "Shared agreement achieved",
         "agreement_success_body": "This package reaches at least 55% predicted support in both communities.",
+        "agreement_success_detail": "This is one of 118 possible combinations out of 8,000 that can be accepted by at least 55% of voters in both communities in a referendum. At the bottom of the page, you can see the 10 most popular combinations.",
         "agreement_progress_title": "Keep negotiating",
         "agreement_progress_body": "The goal is 55% or higher predicted support in both communities.",
         "language_hint": "Choose your language (English, Ελληνικά, Türkçe)",
@@ -286,6 +287,7 @@ UI["Ελληνικά"].update(
         "check_acceptability": "Έλεγχος αποδοχής",
         "agreement_success_title": "Επιτεύχθηκε κοινή αποδοχή",
         "agreement_success_body": "Αυτό το πακέτο φτάνει τουλάχιστον 55% προβλεπόμενη στήριξη και στις δύο κοινότητες.",
+        "agreement_success_detail": "Αυτός είναι ένας από τους 118 πιθανούς συνδυασμούς από σύνολο 8.000 που μπορούν να γίνουν αποδεκτοί από τουλάχιστον 55% των ψηφοφόρων και στις δύο κοινότητες σε δημοψήφισμα. Στο τέλος της σελίδας μπορείτε να δείτε τους 10 πιο δημοφιλείς συνδυασμούς.",
         "agreement_progress_title": "Συνεχίστε τη διαπραγμάτευση",
         "agreement_progress_body": "Ο στόχος είναι 55% ή υψηλότερη προβλεπόμενη στήριξη και στις δύο κοινότητες.",
         "passed": "Πέρασε",
@@ -303,6 +305,7 @@ UI["Türkçe"].update(
         "check_acceptability": "Kabul edilebilirliği kontrol et",
         "agreement_success_title": "Ortak kabul sağlandı",
         "agreement_success_body": "Bu paket iki toplumda da en az %55 tahmini desteğe ulaşıyor.",
+        "agreement_success_detail": "Bu, referandumda her iki toplumdaki seçmenlerin en az %55'i tarafından kabul edilebilecek 8.000 olası kombinasyon içindeki 118 kombinasyondan biridir. Sayfanın sonunda en popüler 10 kombinasyonu görebilirsiniz.",
         "agreement_progress_title": "Müzakereye devam edin",
         "agreement_progress_body": "Hedef, iki toplumda da %55 veya daha yüksek tahmini destektir.",
         "passed": "Geçti",
@@ -506,6 +509,8 @@ def render_agreement_status(text: dict[str, object], gc_support: float, tc_suppo
         if success
         else "The goal is 55% or higher predicted support in both communities.",
     )
+    detail = text_value(text, "agreement_success_detail", "") if success else ""
+    detail_html = f"<div class='agreement-detail'>{detail}</div>" if detail else ""
     gc_status = support_status(gc_support)
     tc_status = support_status(tc_support)
     passed = text_value(text, "passed", "Passed")
@@ -518,6 +523,7 @@ def render_agreement_status(text: dict[str, object], gc_support: float, tc_suppo
             <div class="agreement-copy">
                 <div class="agreement-title">{title}</div>
                 <div class="agreement-body">{body}</div>
+                {detail_html}
             </div>
             <div class="agreement-badges">
                 <span class="agreement-badge agreement-badge-{gc_status}">{text['gc_support']}: {whole_pct(gc_support)} - {"&#10003;" if gc_status == "passed" else "&#9679;"} {passed if gc_status == "passed" else below_target}</span>
@@ -1283,6 +1289,12 @@ st.markdown(
         font-size: 0.96rem;
         line-height: 1.4;
         margin-top: 0.18rem;
+    }
+    .agreement-detail {
+        color: #334155;
+        font-size: 0.9rem;
+        line-height: 1.45;
+        margin-top: 0.55rem;
     }
     .agreement-badges {
         display: flex;
