@@ -168,6 +168,8 @@ UI = {
         "agreement_success_body": "This package reaches at least 55% predicted support in both communities.",
         "agreement_progress_title": "Keep negotiating",
         "agreement_progress_body": "The goal is 55% or higher predicted support in both communities.",
+        "package_instruction": 'Select one option from each attribute to build your solution package and then press the button "Check acceptability".',
+        "check_acceptability": "Check acceptability",
         "passed": "Passed",
         "below_target": "Below target",
         "gc": "Greek Cypriot Community",
@@ -609,8 +611,13 @@ def ensure_package_state() -> None:
 def render_package_popovers(language: str) -> dict[str, str]:
     ensure_package_state()
     text = UI[language]
+    previous_selected = {attribute: st.session_state[package_key(attribute)] for attribute in ATTRIBUTES}
 
     st.subheader(text["package"])
+    st.markdown(
+        f"<p class='package-instruction'>{text_value(text, 'package_instruction', 'Select one option from each attribute to build your solution package and then press the button \"Check acceptability\".')}</p>",
+        unsafe_allow_html=True,
+    )
     for attribute in ATTRIBUTES:
         color = ATTRIBUTE_COLORS[attribute]
         attribute_label = html.escape(text["attributes"][attribute])
@@ -638,7 +645,12 @@ def render_package_popovers(language: str) -> dict[str, str]:
                 label_visibility="collapsed",
             )
 
-    return {attribute: st.session_state[package_key(attribute)] for attribute in ATTRIBUTES}
+    selected = {attribute: st.session_state[package_key(attribute)] for attribute in ATTRIBUTES}
+    if selected != previous_selected:
+        st.session_state.acceptability_checked = False
+        st.session_state.agreement_sound_state = None
+
+    return selected
 
 
 def render_kpi_card(label: str, value: float) -> None:
@@ -1112,6 +1124,32 @@ st.markdown(
         line-height: 1.35;
         margin-top: 0.42rem;
     }
+    .package-instruction {
+        color: #475569;
+        font-size: 1rem;
+        line-height: 1.5;
+        margin: -0.25rem 0 0.9rem 0;
+    }
+    .acceptability-prompt {
+        border: 1px solid #d8e2ef;
+        border-radius: 8px;
+        padding: 1.15rem 1.25rem;
+        margin-top: 3.1rem;
+        background: #f8fbff;
+    }
+    .acceptability-prompt-title {
+        color: #17212b;
+        font-size: 1.22rem;
+        font-weight: 780;
+        line-height: 1.25;
+        margin-bottom: 0.35rem;
+    }
+    .acceptability-prompt-body {
+        color: #475569;
+        font-size: 0.98rem;
+        line-height: 1.45;
+        margin-bottom: 0.9rem;
+    }
     div[data-testid="stRadio"] label {
         border: 1px solid #d8dee4;
         border-radius: 8px;
@@ -1427,39 +1465,58 @@ tc_support = predict("TC", "forced", selected_levels)
 joint_support = min(gc_support, tc_support)
 
 with feedback_col:
-    st.subheader(text["results_title"])
-    kpi_left, kpi_mid, kpi_right = st.columns([1, 1, 1], gap="small")
+    st.markdown(
+        """
+        <section class="acceptability-prompt">
+            <div class="acceptability-prompt-title">Ready to test the package?</div>
+            <div class="acceptability-prompt-body">When your selections are set, check whether the package reaches the 55% acceptability goal in both communities.</div>
+        </section>
+        """,
+        unsafe_allow_html=True,
+    )
+    check_clicked = st.button(
+        text_value(text, "check_acceptability", "Check acceptability"),
+        type="primary",
+        use_container_width=True,
+    )
+    if check_clicked:
+        st.session_state.acceptability_checked = True
 
-    with kpi_left:
-        render_kpi_card(text["gc_support"], gc_support)
+    if st.session_state.get("acceptability_checked", False):
+        st.subheader(text["results_title"])
+        kpi_left, kpi_mid, kpi_right = st.columns([1, 1, 1], gap="small")
 
-    with kpi_mid:
-        render_kpi_card(text["joint_support"], joint_support)
+        with kpi_left:
+            render_kpi_card(text["gc_support"], gc_support)
 
-    with kpi_right:
-        render_kpi_card(text["tc_support"], tc_support)
+        with kpi_mid:
+            render_kpi_card(text["joint_support"], joint_support)
 
-    shared_success = render_agreement_status(text, gc_support, tc_support)
-    current_agreement_state = "success" if shared_success else "failure"
-    previous_agreement_state = st.session_state.get("agreement_sound_state")
-    if enable_sounds and previous_agreement_state is not None and previous_agreement_state != current_agreement_state:
-        play_agreement_tone(current_agreement_state)
-    st.session_state.agreement_sound_state = current_agreement_state
-    if not shared_success:
-        render_culprit_feedback(language, selected_levels, gc_support, tc_support)
+        with kpi_right:
+            render_kpi_card(text["tc_support"], tc_support)
+
+        shared_success = render_agreement_status(text, gc_support, tc_support)
+        current_agreement_state = "success" if shared_success else "failure"
+        previous_agreement_state = st.session_state.get("agreement_sound_state")
+        if enable_sounds and previous_agreement_state != current_agreement_state:
+            play_agreement_tone(current_agreement_state)
+        st.session_state.agreement_sound_state = current_agreement_state
+        if not shared_success:
+            render_culprit_feedback(language, selected_levels, gc_support, tc_support)
 
 st.markdown("<div style='height: 0.75rem;'></div>", unsafe_allow_html=True)
-left, right = st.columns([1, 1], gap="large")
+if st.session_state.get("acceptability_checked", False):
+    left, right = st.columns([1, 1], gap="large")
 
-with left:
-    render_result_card("GC", language, selected_levels, gc_support)
+    with left:
+        render_result_card("GC", language, selected_levels, gc_support)
 
-with right:
-    render_result_card("TC", language, selected_levels, tc_support)
+    with right:
+        render_result_card("TC", language, selected_levels, tc_support)
 
-render_summary_table(text, gc_support, tc_support)
-render_extreme_narratives(language)
-render_viable_packages(language)
+    render_summary_table(text, gc_support, tc_support)
+    render_extreme_narratives(language)
+    render_viable_packages(language)
 render_project_information()
 
 st.markdown(f"<p class='method-note'>{text['method_note']}</p>", unsafe_allow_html=True)
