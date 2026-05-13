@@ -488,16 +488,11 @@ def render_agreement_status(text: dict[str, object], gc_support: float, tc_suppo
     return success
 
 
-def diagnose_culprit(selected: dict[str, str], gc_support: float, tc_support: float) -> dict[str, object] | None:
-    current_gap = {
-        "GC": max(0.0, AGREEMENT_THRESHOLD - gc_support),
-        "TC": max(0.0, AGREEMENT_THRESHOLD - tc_support),
-    }
-    failed_groups = [group for group, gap in current_gap.items() if gap > 0]
-    if not failed_groups:
+def diagnose_culprit_for_group(selected: dict[str, str], group: str, support: float) -> dict[str, object] | None:
+    baseline_gap = max(0.0, AGREEMENT_THRESHOLD - support)
+    if baseline_gap <= 0:
         return None
 
-    baseline_gap = sum(current_gap[group] for group in failed_groups)
     best: dict[str, object] | None = None
 
     for attribute in ATTRIBUTES:
@@ -510,23 +505,25 @@ def diagnose_culprit(selected: dict[str, str], gc_support: float, tc_support: fl
             candidate[attribute] = candidate_level
             candidate_gc = predict("GC", "forced", candidate)
             candidate_tc = predict("TC", "forced", candidate)
-            candidate_gap = {
-                "GC": max(0.0, AGREEMENT_THRESHOLD - candidate_gc),
-                "TC": max(0.0, AGREEMENT_THRESHOLD - candidate_tc),
-            }
-            gap_reduction = baseline_gap - sum(candidate_gap[group] for group in failed_groups)
+            candidate_support = candidate_gc if group == "GC" else candidate_tc
+            gap_reduction = baseline_gap - max(0.0, AGREEMENT_THRESHOLD - candidate_support)
             joint_after = min(candidate_gc, candidate_tc)
 
-            if best is None or (gap_reduction, joint_after) > (best["gap_reduction"], best["joint_after"]):
+            if best is None or (gap_reduction, candidate_support, joint_after) > (
+                best["gap_reduction"],
+                best["candidate_support"],
+                best["joint_after"],
+            ):
                 best = {
+                    "group": group,
                     "attribute": attribute,
                     "current_level": current_level,
                     "candidate_level": candidate_level,
+                    "candidate_support": candidate_support,
                     "gc_after": candidate_gc,
                     "tc_after": candidate_tc,
                     "joint_after": joint_after,
                     "gap_reduction": gap_reduction,
-                    "failed_groups": failed_groups,
                 }
 
     if best and best["gap_reduction"] > 0:
@@ -535,9 +532,13 @@ def diagnose_culprit(selected: dict[str, str], gc_support: float, tc_support: fl
 
 
 def render_culprit_feedback(language: str, selected: dict[str, str], gc_support: float, tc_support: float) -> None:
-    culprit = diagnose_culprit(selected, gc_support, tc_support)
+    diagnostics = [
+        diagnose_culprit_for_group(selected, "GC", gc_support),
+        diagnose_culprit_for_group(selected, "TC", tc_support),
+    ]
+    diagnostics = [diagnostic for diagnostic in diagnostics if diagnostic is not None]
     text = UI[language]
-    if culprit is None:
+    if not diagnostics:
         st.markdown(
             """
             <section class="culprit-card">
@@ -549,18 +550,27 @@ def render_culprit_feedback(language: str, selected: dict[str, str], gc_support:
         )
         return
 
-    attribute = culprit["attribute"]
-    current_level = culprit["current_level"]
-    failed_names = ", ".join(text["gc"] if group == "GC" else text["tc"] for group in culprit["failed_groups"])
+    rows = []
+    for culprit in diagnostics:
+        attribute = culprit["attribute"]
+        current_level = culprit["current_level"]
+        group_name = text["gc"] if culprit["group"] == "GC" else text["tc"]
+        rows.append(
+            f"""
+            <div class="culprit-community-row">
+                <div><strong>{group_name}</strong> is below target.</div>
+                <div>The current choice is <strong>{LABELS[language][current_level]}</strong>.</div>
+                <div>Try an alternative <strong>{text["attributes"][attribute]}</strong> option.</div>
+            </div>
+            """
+        )
 
     st.markdown(
         f"""
         <section class="culprit-card">
-            <div class="culprit-title">&#128269; Likely bottleneck: {text["attributes"][attribute]}</div>
+            <div class="culprit-title">&#128269; Likely bottleneck to explore</div>
             <div class="culprit-body">
-                The community below target is: <strong>{failed_names}</strong>.
-                The current choice is <strong>{LABELS[language][current_level]}</strong>.
-                Try an alternative <strong>{text["attributes"][attribute]}</strong> option.
+                {"".join(rows)}
             </div>
             <div class="culprit-impact">
                 This looks like the most promising single attribute to experiment with next.
@@ -1106,8 +1116,8 @@ st.markdown(
         border: 1px solid color-mix(in srgb, var(--attribute-color) 32%, #d8dee4);
         border-left: 7px solid var(--attribute-color);
         border-radius: 8px;
-        padding: 0.68rem 0.78rem;
-        margin: 0.7rem 0 0.25rem 0;
+        padding: 0.48rem 0.68rem;
+        margin: 0.38rem 0 0.12rem 0;
         background: color-mix(in srgb, var(--attribute-color) 8%, #ffffff);
         box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
     }
@@ -1116,21 +1126,24 @@ st.markdown(
         align-items: center;
         gap: 0.55rem;
         color: #17212b;
-        font-size: 1rem;
+        font-size: 0.92rem;
         font-weight: 820;
         line-height: 1.3;
     }
     .popover-selected-level {
         color: #475569;
-        font-size: 0.86rem;
-        line-height: 1.35;
-        margin-top: 0.42rem;
+        font-size: 0.8rem;
+        line-height: 1.25;
+        margin-top: 0.26rem;
     }
     .package-instruction {
         color: #475569;
-        font-size: 1rem;
-        line-height: 1.5;
-        margin: -0.25rem 0 0.9rem 0;
+        font-size: 0.94rem;
+        line-height: 1.4;
+        margin: -0.25rem 0 0.55rem 0;
+    }
+    div[data-testid="stPopover"] {
+        margin-bottom: 0.34rem;
     }
     .acceptability-prompt {
         border: 1px solid #d8e2ef;
@@ -1182,7 +1195,7 @@ st.markdown(
     }
     .agreement-status {
         display: grid;
-        grid-template-columns: auto minmax(220px, 1fr) auto;
+        grid-template-columns: auto minmax(170px, 1fr);
         align-items: center;
         gap: 1rem;
         border: 1px solid #d8dee4;
@@ -1225,7 +1238,8 @@ st.markdown(
     .agreement-badges {
         display: flex;
         flex-wrap: wrap;
-        justify-content: flex-end;
+        grid-column: 1 / -1;
+        justify-content: flex-start;
         gap: 0.45rem;
     }
     .agreement-badge {
@@ -1234,10 +1248,13 @@ st.markdown(
         padding: 0.42rem 0.65rem;
         background: #ffffff;
         color: #334155;
-        font-size: 0.86rem;
+        font-size: 0.82rem;
         font-weight: 700;
         line-height: 1.15;
-        white-space: nowrap;
+        max-width: 100%;
+        white-space: normal;
+        word-break: normal;
+        overflow-wrap: anywhere;
     }
     .agreement-badge-passed {
         border-color: #a9d7b8;
@@ -1266,6 +1283,16 @@ st.markdown(
         font-size: 0.96rem;
         line-height: 1.45;
         margin-top: 0.38rem;
+    }
+    .culprit-community-row {
+        border-top: 1px solid #eadfbd;
+        padding-top: 0.62rem;
+        margin-top: 0.62rem;
+    }
+    .culprit-community-row:first-child {
+        border-top: 0;
+        padding-top: 0;
+        margin-top: 0;
     }
     .culprit-impact {
         color: #334155;
