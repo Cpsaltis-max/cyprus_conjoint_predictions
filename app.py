@@ -599,66 +599,44 @@ def package_key(attribute: str) -> str:
     return f"package_level_{attribute}"
 
 
-def ensure_package_builder_state() -> None:
-    if "active_package_attribute" not in st.session_state:
-        st.session_state.active_package_attribute = ATTRIBUTES[0]
-
+def ensure_package_state() -> None:
     for attribute in ATTRIBUTES:
         key = package_key(attribute)
         if key not in st.session_state:
             st.session_state[key] = DEFAULT_PACKAGE[attribute]
 
 
-def render_package_builder(language: str) -> dict[str, str]:
-    ensure_package_builder_state()
+def render_package_popovers(language: str) -> dict[str, str]:
+    ensure_package_state()
     text = UI[language]
 
     st.subheader(text["package"])
-    left_col, right_col = st.columns([0.95, 1.55], gap="large")
+    for attribute in ATTRIBUTES:
+        color = ATTRIBUTE_COLORS[attribute]
+        attribute_label = html.escape(text["attributes"][attribute])
+        selected_label = html.escape(LABELS[language][st.session_state[package_key(attribute)]])
 
-    with left_col:
-        st.markdown("<div class='builder-section-title'>Attributes</div>", unsafe_allow_html=True)
-        for attribute in ATTRIBUTES:
-            color = ATTRIBUTE_COLORS[attribute]
-            active_class = " active" if st.session_state.active_package_attribute == attribute else ""
-            attribute_label = html.escape(text["attributes"][attribute])
-            selected_label = html.escape(LABELS[language][st.session_state[package_key(attribute)]])
-
-            st.markdown(
-                f"""
-                <div class="builder-attribute-card{active_class}" style="--attribute-color: {color};">
-                    <div class="builder-attribute-label">
-                        <span class="attribute-color-dot"></span>
-                        <span>{attribute_label}</span>
-                    </div>
-                    <div class="builder-selected-level">{selected_label}</div>
-                </div>
-                """,
-                unsafe_allow_html=True,
-            )
-            if st.button("Select", key=f"activate_{attribute}", use_container_width=True):
-                st.session_state.active_package_attribute = attribute
-
-    with right_col:
-        active_attribute = st.session_state.active_package_attribute
-        color = ATTRIBUTE_COLORS[active_attribute]
-        active_label = html.escape(text["attributes"][active_attribute])
         st.markdown(
             f"""
-            <div class="builder-options-card" style="--attribute-color: {color};">
-                <div class="builder-options-kicker">Choose level</div>
-                <div class="builder-options-title">{active_label}</div>
+            <div class="popover-attribute-card" style="--attribute-color: {color};">
+                <div class="popover-attribute-label">
+                    <span class="attribute-color-dot"></span>
+                    <span>{attribute_label}</span>
+                </div>
+                <div class="popover-selected-level">{selected_label}</div>
             </div>
             """,
             unsafe_allow_html=True,
         )
-        st.radio(
-            text["attributes"][active_attribute],
-            LEVELS[active_attribute],
-            key=package_key(active_attribute),
-            format_func=lambda level, lang=language: LABELS[lang][level],
-            label_visibility="collapsed",
-        )
+
+        with st.popover("Options", use_container_width=True):
+            st.radio(
+                text["attributes"][attribute],
+                LEVELS[attribute],
+                key=package_key(attribute),
+                format_func=lambda level, lang=language: LABELS[lang][level],
+                label_visibility="collapsed",
+            )
 
     return {attribute: st.session_state[package_key(attribute)] for attribute in ATTRIBUTES}
 
@@ -1110,29 +1088,16 @@ st.markdown(
         line-height: 1.35;
         padding: 0.28rem 0;
     }
-    .builder-section-title {
-        color: #475569;
-        font-size: 0.78rem;
-        font-weight: 840;
-        letter-spacing: 0.08em;
-        line-height: 1.2;
-        margin: 0 0 0.6rem 0;
-        text-transform: uppercase;
-    }
-    .builder-attribute-card {
+    .popover-attribute-card {
         border: 1px solid color-mix(in srgb, var(--attribute-color) 32%, #d8dee4);
         border-left: 7px solid var(--attribute-color);
         border-radius: 8px;
         padding: 0.78rem 0.85rem;
-        margin: 0.7rem 0 0.32rem 0;
+        margin: 0.85rem 0 0.32rem 0;
         background: color-mix(in srgb, var(--attribute-color) 8%, #ffffff);
         box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
     }
-    .builder-attribute-card.active {
-        background: color-mix(in srgb, var(--attribute-color) 15%, #ffffff);
-        box-shadow: 0 10px 24px rgba(15, 23, 42, 0.10);
-    }
-    .builder-attribute-label {
+    .popover-attribute-label {
         display: flex;
         align-items: center;
         gap: 0.55rem;
@@ -1141,34 +1106,11 @@ st.markdown(
         font-weight: 820;
         line-height: 1.3;
     }
-    .builder-selected-level {
+    .popover-selected-level {
         color: #475569;
         font-size: 0.9rem;
         line-height: 1.35;
         margin-top: 0.42rem;
-    }
-    .builder-options-card {
-        border: 1px solid color-mix(in srgb, var(--attribute-color) 34%, #d8dee4);
-        border-top: 7px solid var(--attribute-color);
-        border-radius: 8px;
-        padding: 1rem 1.05rem;
-        margin-bottom: 0.75rem;
-        background: color-mix(in srgb, var(--attribute-color) 7%, #ffffff);
-    }
-    .builder-options-kicker {
-        color: #64748b;
-        font-size: 0.74rem;
-        font-weight: 840;
-        letter-spacing: 0.08em;
-        line-height: 1.2;
-        text-transform: uppercase;
-    }
-    .builder-options-title {
-        color: #17212b;
-        font-size: 1.35rem;
-        font-weight: 820;
-        line-height: 1.22;
-        margin-top: 0.28rem;
     }
     div[data-testid="stRadio"] label {
         border: 1px solid #d8dee4;
@@ -1475,7 +1417,7 @@ enable_sounds = st.sidebar.toggle(text_value(text, "sound_toggle", "Enable sound
 render_logo_header()
 st.title(text["title"])
 
-selected_levels = render_package_builder(language)
+selected_levels = render_package_popovers(language)
 
 gc_support = predict("GC", "forced", selected_levels)
 tc_support = predict("TC", "forced", selected_levels)
