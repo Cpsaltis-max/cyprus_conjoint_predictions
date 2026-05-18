@@ -1104,7 +1104,7 @@ def render_package_popovers(language: str) -> dict[str, str | None]:
             else text_value(text, "select_option_placeholder", "Choose an option")
         )
 
-        card_col, option_col = st.columns([2.15, 2.7], gap="small")
+        card_col, option_col = st.columns([2.25, 3.0], gap="small")
         with card_col:
             st.markdown(
                 f"""
@@ -1606,10 +1606,12 @@ st.markdown(
         border: 1px solid color-mix(in srgb, var(--attribute-color) 32%, #d8dee4);
         border-left: 6px solid var(--attribute-color);
         border-radius: 7px 7px 0 0;
-        padding: 0.38rem 0.58rem;
+        padding: 0.48rem 0.62rem 0.62rem 0.62rem;
         margin: 0.04rem 0 0 0;
         background: color-mix(in srgb, var(--attribute-color) 8%, #ffffff);
         box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+        min-height: 4.2rem;
+        overflow: visible;
     }
     .popover-attribute-label {
         display: flex;
@@ -1623,8 +1625,9 @@ st.markdown(
     .popover-selected-level {
         color: #475569;
         font-size: 0.86rem;
-        line-height: 1.22;
-        margin-top: 0.16rem;
+        line-height: 1.32;
+        margin-top: 0.22rem;
+        overflow: visible;
     }
     .package-instruction {
         color: #475569;
@@ -1649,19 +1652,16 @@ st.markdown(
         overflow: hidden;
     }
     div[data-baseweb="popover"] {
-        width: min(980px, 72vw) !important;
-        min-width: min(900px, 66vw) !important;
-        max-width: min(980px, 72vw) !important;
-    }
-    div[data-baseweb="popover"] > div {
-        width: 100% !important;
-        max-width: none !important;
+        width: min(680px, 46vw) !important;
+        min-width: min(560px, 40vw) !important;
+        max-width: min(680px, 46vw) !important;
     }
     div[data-baseweb="popover"] ul,
-    div[data-baseweb="popover"] [role="listbox"] {
-        width: 100% !important;
-        min-width: 100% !important;
-        max-width: none !important;
+    div[data-baseweb="popover"] [role="listbox"],
+    div[data-baseweb="menu"] {
+        width: min(680px, 46vw) !important;
+        min-width: min(560px, 40vw) !important;
+        max-width: min(680px, 46vw) !important;
     }
     div[data-baseweb="popover"] [role="option"] {
         width: 100% !important;
@@ -1798,10 +1798,11 @@ st.markdown(
     }
     .acceptability-prompt-title {
         color: #17212b;
-        font-size: 1.05rem;
+        font-size: 0.98rem;
         font-weight: 780;
         line-height: 1.25;
         margin-bottom: 0.35rem;
+        overflow-wrap: anywhere;
     }
     .acceptability-prompt-body {
         color: #475569;
@@ -2209,7 +2210,7 @@ with language_col:
 with title_col:
     st.title(text["title"])
 
-package_col, feedback_col = st.columns([2.35, 0.65], gap="large")
+package_col, feedback_col = st.columns([2.55, 0.55], gap="large")
 
 with package_col:
     selected_levels = render_package_popovers(language)
