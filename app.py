@@ -1104,7 +1104,7 @@ def render_package_popovers(language: str) -> dict[str, str | None]:
             else text_value(text, "select_option_placeholder", "Choose an option")
         )
 
-        card_col, option_col = st.columns([5, 1.35], gap="small")
+        card_col, option_col = st.columns([3.2, 2.05], gap="small")
         with card_col:
             st.markdown(
                 f"""
@@ -1648,6 +1648,27 @@ st.markdown(
         white-space: nowrap;
         overflow: hidden;
     }
+    div[data-baseweb="popover"] {
+        min-width: min(620px, 46vw) !important;
+        max-width: min(720px, 52vw) !important;
+    }
+    div[data-baseweb="popover"] ul,
+    div[data-baseweb="popover"] [role="listbox"] {
+        min-width: min(620px, 46vw) !important;
+        max-width: min(720px, 52vw) !important;
+    }
+    div[data-baseweb="popover"] [role="option"] {
+        white-space: normal !important;
+        height: auto !important;
+        min-height: 2.45rem !important;
+        align-items: flex-start !important;
+    }
+    div[data-baseweb="popover"] [role="option"] div {
+        white-space: normal !important;
+        overflow: visible !important;
+        text-overflow: clip !important;
+        line-height: 1.28 !important;
+    }
     div[data-testid="stSelectbox"] [data-baseweb="select"] span,
     div[data-testid="stSelectbox"] [data-baseweb="select"] div {
         color: inherit !important;
@@ -2177,7 +2198,7 @@ with language_col:
 with title_col:
     st.title(text["title"])
 
-package_col, feedback_col = st.columns([1, 1], gap="large")
+package_col, feedback_col = st.columns([1.35, 0.85], gap="large")
 
 with package_col:
     selected_levels = render_package_popovers(language)
