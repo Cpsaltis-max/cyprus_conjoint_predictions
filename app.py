@@ -182,6 +182,7 @@ UI = {
         "select_option_placeholder": "Choose an option",
         "select_all_warning": "Please select one option from each attribute before checking acceptability.",
         "try_again": "Try again",
+        "research_method_note": 'The app is based on an experimental method called "conjoint survey experiment". In previous published research of our team (<a href="https://journals.sagepub.com/doi/10.1177/00220027221108221" target="_blank" rel="noopener noreferrer">read the article</a>) this method was applied to identify possible “zones of agreement” between Greek Cypriots and Turkish Cypriots on a future peace settlement. Representative samples from both communities were shown pairs of hypothetical peace packages and asked to choose between them. Each package varied across five key attributes: federal executive, territorial readjustments, property compensation, implementation/security monitoring, and Supreme Court composition. By randomly varying these attributes, the method estimates which elements increase or decrease public support. The analysis uses a binary outcome, whether a package was preferred, and estimates marginal effects to reveal both community divergences and potential compromise positions.',
         "bottleneck_title": "Likely bottleneck to explore",
         "below_target_sentence": "{community} is below target.",
         "current_choice_sentence": "The current choice is {choice}.",
@@ -302,6 +303,7 @@ UI["Ελληνικά"].update(
         "select_option_placeholder": "Επιλέξτε επιλογή",
         "select_all_warning": "Παρακαλώ επιλέξτε μία επιλογή από κάθε χαρακτηριστικό πριν ελέγξετε την αποδοχή.",
         "try_again": "Προσπαθήστε ξανά",
+        "research_method_note": 'Η εφαρμογή βασίζεται σε μια πειραματική μέθοδο που ονομάζεται "πείραμα conjoint survey". Σε προηγούμενη δημοσιευμένη έρευνα της ομάδας μας (<a href="https://journals.sagepub.com/doi/10.1177/00220027221108221" target="_blank" rel="noopener noreferrer">διαβάστε το άρθρο</a>) η μέθοδος αυτή εφαρμόστηκε για να εντοπιστούν πιθανές “ζώνες συμφωνίας” ανάμεσα σε Ελληνοκύπριους και Τουρκοκύπριους για μια μελλοντική ειρηνευτική διευθέτηση. Αντιπροσωπευτικά δείγματα και από τις δύο κοινότητες είδαν ζεύγη υποθετικών πακέτων λύσης και κλήθηκαν να επιλέξουν ανάμεσά τους. Κάθε πακέτο διέφερε σε πέντε βασικά χαρακτηριστικά: ομοσπονδιακή εκτελεστική εξουσία, εδαφικές αναπροσαρμογές, αποζημίωση περιουσιών, παρακολούθηση εφαρμογής και ασφάλειας, και σύνθεση του Ανώτατου Δικαστηρίου. Με την τυχαία διαφοροποίηση αυτών των χαρακτηριστικών, η μέθοδος εκτιμά ποια στοιχεία αυξάνουν ή μειώνουν τη δημόσια στήριξη. Η ανάλυση χρησιμοποιεί ένα δυαδικό αποτέλεσμα, δηλαδή αν ένα πακέτο προτιμήθηκε, και εκτιμά οριακές επιδράσεις για να αναδείξει τόσο τις αποκλίσεις μεταξύ των κοινοτήτων όσο και πιθανές θέσεις συμβιβασμού.',
         "bottleneck_title": "Πιθανό σημείο προς διερεύνηση",
         "below_target_sentence": "Η {community} είναι κάτω από τον στόχο.",
         "current_choice_sentence": "Η τρέχουσα επιλογή είναι {choice}.",
@@ -330,6 +332,7 @@ UI["Türkçe"].update(
         "select_option_placeholder": "Bir seçenek seçin",
         "select_all_warning": "Kabul edilebilirliği kontrol etmeden önce her özellikten bir seçenek seçin.",
         "try_again": "Tekrar deneyin",
+        "research_method_note": 'Bu uygulama "conjoint survey experiment" adı verilen deneysel bir yönteme dayanmaktadır. Ekibimizin daha önce yayımlanan araştırmasında (<a href="https://journals.sagepub.com/doi/10.1177/00220027221108221" target="_blank" rel="noopener noreferrer">makaleyi okuyun</a>) bu yöntem, Kıbrıslı Rumlar ve Kıbrıslı Türkler arasında gelecekteki bir barış anlaşmasına ilişkin olası “uzlaşma alanlarını” belirlemek için uygulanmıştır. Her iki toplumdan temsili örneklemlere varsayımsal barış paketlerinden oluşan ikili seçenekler gösterilmiş ve aralarından birini seçmeleri istenmiştir. Her paket beş temel özellik bakımından değişmiştir: federal yürütme, toprak düzenlemeleri, mülkiyet tazminatı, uygulama/güvenlik izlemesi ve Yüksek Mahkeme bileşimi. Bu özellikleri rastgele değiştirerek yöntem, hangi unsurların kamu desteğini artırdığını veya azalttığını tahmin eder. Analiz, bir paketin tercih edilip edilmediğini gösteren ikili bir sonuç kullanır ve hem toplumlar arası ayrışmaları hem de olası uzlaşma pozisyonlarını ortaya koymak için marjinal etkileri tahmin eder.',
         "bottleneck_title": "Keşfedilecek olası darboğaz",
         "below_target_sentence": "{community} hedefin altında.",
         "current_choice_sentence": "Mevcut seçim {choice}.",
@@ -761,6 +764,10 @@ def render_package_popovers(language: str) -> dict[str, str | None]:
                 unsafe_allow_html=True,
             )
         with option_col:
+            st.markdown(
+                f"<span class='option-color-marker option-color-{attribute}'></span>",
+                unsafe_allow_html=True,
+            )
             with st.popover(text_value(text, "options", "Options"), use_container_width=True):
                 st.radio(
                     text["attributes"][attribute],
@@ -1062,7 +1069,8 @@ def render_viable_packages(language: str) -> None:
     )
 
 
-def render_project_information() -> None:
+def render_project_information(language: str) -> None:
+    text = UI[language]
     st.markdown(
         """
         <section class="info-section">
@@ -1095,6 +1103,14 @@ def render_project_information() -> None:
             <p><strong>Allison McCulloch (Co-PI of Inclusive Peace)</strong> — Brandon University</p>
             <p><strong>Ilke Dagli</strong> — Centre for Sustainable Peace and Democratic Development (SeeD)</p>
             <p><strong>Eliz Tefik</strong> — Lipa Consultancy</p>
+        </section>
+        """,
+        unsafe_allow_html=True,
+    )
+    st.markdown(
+        f"""
+        <section class="method-explainer">
+            <p>{text_value(text, "research_method_note", "")}</p>
         </section>
         """,
         unsafe_allow_html=True,
@@ -1235,7 +1251,7 @@ st.markdown(
         border: 1px solid color-mix(in srgb, var(--attribute-color) 32%, #d8dee4);
         border-left: 6px solid var(--attribute-color);
         border-radius: 7px 7px 0 0;
-        padding: 0.28rem 0.5rem;
+        padding: 0.38rem 0.58rem;
         margin: 0.04rem 0 0 0;
         background: color-mix(in srgb, var(--attribute-color) 8%, #ffffff);
         box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
@@ -1245,35 +1261,70 @@ st.markdown(
         align-items: center;
         gap: 0.45rem;
         color: #17212b;
-        font-size: 0.82rem;
+        font-size: 1rem;
         font-weight: 820;
-        line-height: 1.12;
+        line-height: 1.18;
     }
     .popover-selected-level {
         color: #475569;
-        font-size: 0.68rem;
-        line-height: 1.12;
-        margin-top: 0.12rem;
+        font-size: 0.86rem;
+        line-height: 1.22;
+        margin-top: 0.16rem;
     }
     .package-instruction {
         color: #475569;
-        font-size: 0.88rem;
+        font-size: 0.98rem;
         line-height: 1.32;
         margin: -0.3rem 0 0.35rem 0;
+    }
+    .option-color-marker {
+        display: none;
     }
     div[data-testid="stPopover"] {
         margin-bottom: 0.08rem;
     }
     div[data-testid="stPopover"] button {
-        min-height: 1.72rem;
-        height: 1.72rem;
-        border-radius: 0 0 7px 7px;
+        min-height: 2.45rem;
+        height: 2.45rem;
+        border-radius: 7px;
         padding: 0.05rem 0.45rem;
-        font-size: 0.78rem;
+        font-size: 0.92rem;
+        font-weight: 760;
+        color: #ffffff !important;
+    }
+    div[data-testid="column"]:has(.option-color-political_structure) div[data-testid="stPopover"] button {
+        background: #ef4444 !important;
+        border-color: #ef4444 !important;
+    }
+    div[data-testid="column"]:has(.option-color-territorial_arrangements) div[data-testid="stPopover"] button {
+        background: #f59e0b !important;
+        border-color: #f59e0b !important;
+    }
+    div[data-testid="column"]:has(.option-color-compensation_property) div[data-testid="stPopover"] button {
+        background: #10b981 !important;
+        border-color: #10b981 !important;
+    }
+    div[data-testid="column"]:has(.option-color-security_guarantees) div[data-testid="stPopover"] button {
+        background: #3b82f6 !important;
+        border-color: #3b82f6 !important;
+    }
+    div[data-testid="column"]:has(.option-color-judicial_system) div[data-testid="stPopover"] button {
+        background: #8b5cf6 !important;
+        border-color: #8b5cf6 !important;
+    }
+    div[data-testid="column"]:has(.option-color-energy_cooperation) div[data-testid="stPopover"] button {
+        background: #06b6d4 !important;
+        border-color: #06b6d4 !important;
+    }
+    div[data-testid="stButton"] button[kind="secondary"] {
+        background: #bbf7d0 !important;
+        border-color: #86efac !important;
+        color: #14532d !important;
+        font-weight: 760;
     }
     .attribute-color-dot {
-        width: 0.54rem;
-        height: 0.54rem;
+        width: 0.72rem;
+        height: 0.72rem;
     }
     .acceptability-prompt {
         border: 1px solid #d8e2ef;
@@ -1301,6 +1352,10 @@ st.markdown(
         padding: 0.56rem 0.65rem;
         margin-bottom: 0.38rem;
         background: #ffffff;
+    }
+    div[data-testid="stRadio"] label p {
+        font-size: 1rem;
+        line-height: 1.32;
     }
     .kpi-card {
         min-height: 92px;
@@ -1553,7 +1608,8 @@ st.markdown(
         margin: 0.2rem 0 0 0;
     }
     .info-section,
-    .team-section {
+    .team-section,
+    .method-explainer {
         margin-top: 2.4rem;
         padding-top: 1.35rem;
         border-top: 1px solid #e3e8ef;
@@ -1569,10 +1625,31 @@ st.markdown(
         text-align: center;
     }
     .info-section p,
-    .team-section p {
+    .team-section p,
+    .method-explainer p {
         font-size: 1rem;
         line-height: 1.45;
         margin: 0 0 0.8rem 0;
+    }
+    .method-explainer {
+        margin-top: 1.2rem;
+        padding: 1.1rem 1.25rem;
+        border: 1px solid #d8e2ef;
+        border-radius: 8px;
+        background: #f8fbff;
+    }
+    .method-explainer p {
+        color: #334155;
+        line-height: 1.58;
+        margin-bottom: 0;
+    }
+    .method-explainer a {
+        color: #0f766e;
+        font-weight: 760;
+        text-decoration: none;
+    }
+    .method-explainer a:hover {
+        text-decoration: underline;
     }
     .team-section {
         margin-bottom: 2.5rem;
@@ -1688,9 +1765,11 @@ with feedback_col:
         st.session_state.agreement_sound_state = current_agreement_state
         if not shared_success:
             render_culprit_feedback(language, completed_package, gc_support, tc_support)
-            if st.button(text_value(text, "try_again", "Try again"), use_container_width=True):
-                reset_package_attempt()
-                st.rerun()
+            st.button(
+                text_value(text, "try_again", "Try again"),
+                use_container_width=True,
+                on_click=reset_package_attempt,
+            )
 
 st.markdown("<div style='height: 0.75rem;'></div>", unsafe_allow_html=True)
 if st.session_state.get("acceptability_checked", False) and completed_package:
@@ -1705,7 +1784,7 @@ if st.session_state.get("acceptability_checked", False) and completed_package:
     render_summary_table(text, gc_support, tc_support)
     render_extreme_narratives(language)
     render_viable_packages(language)
-render_project_information()
+render_project_information(language)
 
 st.markdown(f"<p class='method-note'>{text['method_note']}</p>", unsafe_allow_html=True)
 
