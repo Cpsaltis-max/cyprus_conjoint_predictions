@@ -2250,37 +2250,36 @@ with feedback_col:
     if st.session_state.get("package_warning", False):
         st.warning(text_value(text, "select_all_warning", "Please select one option from each attribute before checking acceptability."))
 
-    if st.session_state.get("acceptability_checked", False) and completed_package:
-        st.subheader(text["results_title"])
-        kpi_left, kpi_mid, kpi_right = st.columns([1, 1, 1], gap="small")
-
-        with kpi_left:
-            render_kpi_card(text["gc_support"], gc_support)
-
-        with kpi_mid:
-            render_kpi_card(text["joint_support"], joint_support)
-
-        with kpi_right:
-            render_kpi_card(text["tc_support"], tc_support)
-
-        shared_success = render_agreement_status(text, gc_support, tc_support)
-        current_agreement_state = "success" if shared_success else "failure"
-        previous_agreement_state = st.session_state.get("agreement_sound_state")
-        if enable_sounds and previous_agreement_state != current_agreement_state:
-            play_agreement_tone(current_agreement_state)
-        st.session_state.agreement_sound_state = current_agreement_state
-        if not shared_success:
-            render_culprit_feedback(language, completed_package, gc_support, tc_support)
-            st.button(
-                text_value(text, "try_again", "Try again"),
-                use_container_width=True,
-                on_click=reset_package_attempt,
-            )
-        else:
-            render_success_share_panel(language, completed_package, gc_support, tc_support)
-
 st.markdown("<div style='height: 0.75rem;'></div>", unsafe_allow_html=True)
 if st.session_state.get("acceptability_checked", False) and completed_package:
+    st.subheader(text["results_title"])
+    kpi_left, kpi_mid, kpi_right = st.columns([1, 1, 1], gap="small")
+
+    with kpi_left:
+        render_kpi_card(text["gc_support"], gc_support)
+
+    with kpi_mid:
+        render_kpi_card(text["joint_support"], joint_support)
+
+    with kpi_right:
+        render_kpi_card(text["tc_support"], tc_support)
+
+    shared_success = render_agreement_status(text, gc_support, tc_support)
+    current_agreement_state = "success" if shared_success else "failure"
+    previous_agreement_state = st.session_state.get("agreement_sound_state")
+    if enable_sounds and previous_agreement_state != current_agreement_state:
+        play_agreement_tone(current_agreement_state)
+    st.session_state.agreement_sound_state = current_agreement_state
+    if not shared_success:
+        render_culprit_feedback(language, completed_package, gc_support, tc_support)
+        st.button(
+            text_value(text, "try_again", "Try again"),
+            use_container_width=True,
+            on_click=reset_package_attempt,
+        )
+    else:
+        render_success_share_panel(language, completed_package, gc_support, tc_support)
+
     left, right = st.columns([1, 1], gap="large")
 
     with left:
