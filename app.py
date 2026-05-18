@@ -786,7 +786,6 @@ def draw_wrapped_text(
 def create_success_package_png(language: str, selected: dict[str, str], gc_support: float, tc_support: float) -> bytes:
     text = UI[language]
     width = 1080
-    top_height = 500
     bottom_height = 230
     joint_support = min(gc_support, tc_support)
     headline = text_value(
@@ -803,6 +802,10 @@ def create_success_package_png(language: str, selected: dict[str, str], gc_suppo
     attr_font = image_font(46, True)
     level_font = image_font(38)
     footer_font = image_font(30)
+    headline_lines = wrapped_lines(probe_draw, headline, headline_font, 940)
+    headline_end_y_estimate = 185 + len(headline_lines) * 62
+    metrics_y = max(375, headline_end_y_estimate + 28)
+    top_height = metrics_y + 190
     row_specs = []
     for attribute in ATTRIBUTES:
         attribute_name = text["attributes"][attribute]
@@ -820,11 +823,10 @@ def create_success_package_png(language: str, selected: dict[str, str], gc_suppo
     draw.ellipse((805, height - 380, 1215, height + 30), fill="#ede9fe")
 
     draw.text((70, 70), "55%+ OK", font=title_font, fill="#0f2537")
-    headline_end_y = draw_wrapped_text(draw, (70, 185), headline, headline_font, "#17212b", 940, 16)
-    metrics_y = max(375, headline_end_y + 28)
+    draw_wrapped_text(draw, (70, 185), headline, headline_font, "#17212b", 940, 16)
     draw.text((70, metrics_y), f"{text['gc_support']}: {whole_pct(gc_support)}", font=metric_font, fill="#166534")
     draw.text((70, metrics_y + 52), f"{text['joint_support']}: {whole_pct(joint_support)}", font=metric_font, fill="#0f2537")
-    draw.text((560, metrics_y + 52), f"{text['tc_support']}: {whole_pct(tc_support)}", font=metric_font, fill="#166534")
+    draw.text((70, metrics_y + 104), f"{text['tc_support']}: {whole_pct(tc_support)}", font=metric_font, fill="#166534")
 
     y = top_height
     for attribute, attr_lines, level_lines, row_height in row_specs:
