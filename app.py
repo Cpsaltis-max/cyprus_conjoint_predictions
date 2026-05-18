@@ -11,6 +11,7 @@ from pathlib import Path
 
 import streamlit as st
 from PIL import Image, ImageDraw, ImageFont
+import PIL
 
 
 st.set_page_config(
@@ -665,27 +666,40 @@ def create_success_package_svg(language: str, selected: dict[str, str], gc_suppo
 
 
 def image_font(size: int, bold: bool = False) -> ImageFont.FreeTypeFont:
+    pil_fonts_dir = Path(PIL.__file__).resolve().parent / "fonts"
     candidates = (
         [
+            "DejaVuSans-Bold.ttf",
+            "Arial Bold.ttf",
             r"C:\Windows\Fonts\segoeuib.ttf",
             r"C:\Windows\Fonts\arialbd.ttf",
             "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf",
             "/usr/share/fonts/truetype/liberation2/LiberationSans-Bold.ttf",
             "/usr/share/fonts/truetype/noto/NotoSans-Bold.ttf",
+            str(pil_fonts_dir / "DejaVuSans-Bold.ttf"),
         ]
         if bold
         else [
+            "DejaVuSans.ttf",
+            "Arial.ttf",
             r"C:\Windows\Fonts\segoeui.ttf",
             r"C:\Windows\Fonts\arial.ttf",
             "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf",
             "/usr/share/fonts/truetype/liberation2/LiberationSans-Regular.ttf",
             "/usr/share/fonts/truetype/noto/NotoSans-Regular.ttf",
+            str(pil_fonts_dir / "DejaVuSans.ttf"),
         ]
     )
     for candidate in candidates:
-        if Path(candidate).exists():
-            return ImageFont.truetype(candidate, size)
-    return ImageFont.load_default()
+        if Path(candidate).exists() or not any(sep in candidate for sep in ("\\", "/")):
+            try:
+                return ImageFont.truetype(candidate, size)
+            except OSError:
+                continue
+    try:
+        return ImageFont.load_default(size=size)
+    except TypeError:
+        return ImageFont.load_default()
 
 
 def wrapped_lines(draw: ImageDraw.ImageDraw, content: str, font_obj: ImageFont.FreeTypeFont, max_width: int) -> list[str]:
