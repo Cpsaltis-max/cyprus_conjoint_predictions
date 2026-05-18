@@ -1655,6 +1655,7 @@ st.markdown(
         width: min(680px, 46vw) !important;
         min-width: min(560px, 40vw) !important;
         max-width: min(680px, 46vw) !important;
+        margin-left: 7rem !important;
     }
     div[data-baseweb="popover"] ul,
     div[data-baseweb="popover"] [role="listbox"],
