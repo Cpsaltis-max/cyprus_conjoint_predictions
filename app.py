@@ -2,7 +2,9 @@ import base64
 import html
 import io
 import math
+import subprocess
 import struct
+import sys
 import textwrap
 import urllib.parse
 import wave
@@ -667,30 +669,72 @@ def create_success_package_svg(language: str, selected: dict[str, str], gc_suppo
 
 def image_font(size: int, bold: bool = False) -> ImageFont.FreeTypeFont:
     pil_fonts_dir = Path(PIL.__file__).resolve().parent / "fonts"
+    font_name = "DejaVu Sans:style=Bold" if bold else "DejaVu Sans"
+    fontconfig_path = ""
+    try:
+        fontconfig = subprocess.run(
+            ["fc-match", "-f", "%{file}", font_name],
+            check=False,
+            capture_output=True,
+            text=True,
+            timeout=1,
+        )
+        fontconfig_path = fontconfig.stdout.strip()
+    except Exception:
+        fontconfig_path = ""
+
+    matplotlib_font = ""
+    try:
+        from matplotlib import font_manager
+
+        matplotlib_font = font_manager.findfont("DejaVu Sans", fallback_to_default=True)
+    except Exception:
+        matplotlib_font = ""
+
+    discovered_fonts = []
+    for root in [
+        Path("/usr/share/fonts"),
+        Path("/usr/local/share/fonts"),
+        Path(sys.prefix) / "lib",
+        Path.home() / ".fonts",
+    ]:
+        if root.exists():
+            discovered_fonts.extend(str(path) for path in root.rglob("DejaVuSans-Bold.ttf" if bold else "DejaVuSans.ttf"))
+            discovered_fonts.extend(str(path) for path in root.rglob("NotoSans-Bold.ttf" if bold else "NotoSans-Regular.ttf"))
+            discovered_fonts.extend(str(path) for path in root.rglob("LiberationSans-Bold.ttf" if bold else "LiberationSans-Regular.ttf"))
+
     candidates = (
         [
             "DejaVuSans-Bold.ttf",
             "Arial Bold.ttf",
+            fontconfig_path,
+            matplotlib_font,
             r"C:\Windows\Fonts\segoeuib.ttf",
             r"C:\Windows\Fonts\arialbd.ttf",
             "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf",
             "/usr/share/fonts/truetype/liberation2/LiberationSans-Bold.ttf",
             "/usr/share/fonts/truetype/noto/NotoSans-Bold.ttf",
             str(pil_fonts_dir / "DejaVuSans-Bold.ttf"),
+            *discovered_fonts,
         ]
         if bold
         else [
             "DejaVuSans.ttf",
             "Arial.ttf",
+            fontconfig_path,
+            matplotlib_font,
             r"C:\Windows\Fonts\segoeui.ttf",
             r"C:\Windows\Fonts\arial.ttf",
             "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf",
             "/usr/share/fonts/truetype/liberation2/LiberationSans-Regular.ttf",
             "/usr/share/fonts/truetype/noto/NotoSans-Regular.ttf",
             str(pil_fonts_dir / "DejaVuSans.ttf"),
+            *discovered_fonts,
         ]
     )
     for candidate in candidates:
+        if not candidate:
+            continue
         if Path(candidate).exists() or not any(sep in candidate for sep in ("\\", "/")):
             try:
                 return ImageFont.truetype(candidate, size)
