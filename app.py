@@ -195,7 +195,8 @@ UI = {
         "below_target_sentence": "{community} is below target.",
         "current_choice_sentence": "The current choice is {choice}.",
         "try_attribute_sentence": "Try an alternative {attribute} option.",
-        "bottleneck_impact": "This looks like the most promising single attribute to experiment with next.",
+        "try_attributes_sentence": "Try alternatives in these attributes: {attributes}.",
+        "bottleneck_impact": "These look like the most promising attributes to experiment with next.",
         "no_bottleneck_title": "No single clear bottleneck found",
         "no_bottleneck_body": "Try changing a combination of attributes. A single attribute switch does not clearly move the package toward 55% in the community or communities below target.",
         "passed": "Passed",
@@ -321,7 +322,8 @@ UI["Ελληνικά"].update(
         "below_target_sentence": "Η {community} είναι κάτω από τον στόχο.",
         "current_choice_sentence": "Η τρέχουσα επιλογή είναι {choice}.",
         "try_attribute_sentence": "Δοκιμάστε μια εναλλακτική επιλογή στο χαρακτηριστικό {attribute}.",
-        "bottleneck_impact": "Αυτό φαίνεται να είναι το πιο υποσχόμενο χαρακτηριστικό για να πειραματιστείτε στη συνέχεια.",
+        "try_attributes_sentence": "Δοκιμάστε εναλλακτικές επιλογές στα εξής χαρακτηριστικά: {attributes}.",
+        "bottleneck_impact": "Αυτά φαίνεται να είναι τα πιο υποσχόμενα χαρακτηριστικά για να πειραματιστείτε στη συνέχεια.",
         "no_bottleneck_title": "Δεν βρέθηκε ένα σαφές μοναδικό εμπόδιο",
         "no_bottleneck_body": "Δοκιμάστε να αλλάξετε συνδυασμό χαρακτηριστικών. Μια αλλαγή σε ένα μόνο χαρακτηριστικό δεν φαίνεται να φέρνει καθαρά το πακέτο πιο κοντά στο 55%.",
         "agreement_success_title": "Επιτεύχθηκε κοινή αποδοχή",
@@ -355,7 +357,8 @@ UI["Türkçe"].update(
         "below_target_sentence": "{community} hedefin altında.",
         "current_choice_sentence": "Mevcut seçim {choice}.",
         "try_attribute_sentence": "{attribute} için alternatif bir seçenek deneyin.",
-        "bottleneck_impact": "Bir sonraki deneme için en umut verici tek özellik bu gibi görünüyor.",
+        "try_attributes_sentence": "Şu özelliklerde alternatif seçenekleri deneyin: {attributes}.",
+        "bottleneck_impact": "Bir sonraki deneme için en umut verici özellikler bunlar gibi görünüyor.",
         "no_bottleneck_title": "Tek bir belirgin darboğaz bulunamadı",
         "no_bottleneck_body": "Özelliklerin bir kombinasyonunu değiştirmeyi deneyin. Tek bir özellik değişikliği paketi hedefe açık biçimde yaklaştırmıyor.",
         "agreement_success_title": "Ortak kabul sağlandı",
@@ -663,9 +666,21 @@ def create_success_package_svg(language: str, selected: dict[str, str], gc_suppo
 
 def image_font(size: int, bold: bool = False) -> ImageFont.FreeTypeFont:
     candidates = (
-        [r"C:\Windows\Fonts\segoeuib.ttf", r"C:\Windows\Fonts\arialbd.ttf", "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf"]
+        [
+            r"C:\Windows\Fonts\segoeuib.ttf",
+            r"C:\Windows\Fonts\arialbd.ttf",
+            "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf",
+            "/usr/share/fonts/truetype/liberation2/LiberationSans-Bold.ttf",
+            "/usr/share/fonts/truetype/noto/NotoSans-Bold.ttf",
+        ]
         if bold
-        else [r"C:\Windows\Fonts\segoeui.ttf", r"C:\Windows\Fonts\arial.ttf", "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf"]
+        else [
+            r"C:\Windows\Fonts\segoeui.ttf",
+            r"C:\Windows\Fonts\arial.ttf",
+            "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf",
+            "/usr/share/fonts/truetype/liberation2/LiberationSans-Regular.ttf",
+            "/usr/share/fonts/truetype/noto/NotoSans-Regular.ttf",
+        ]
     )
     for candidate in candidates:
         if Path(candidate).exists():
@@ -712,9 +727,9 @@ def draw_wrapped_text(
 
 def create_success_package_png(language: str, selected: dict[str, str], gc_support: float, tc_support: float) -> bytes:
     text = UI[language]
-    width = 1080
-    top_height = 310
-    bottom_height = 180
+    width = 1600
+    top_height = 430
+    bottom_height = 230
     joint_support = min(gc_support, tc_support)
     headline = text_value(
         text,
@@ -724,53 +739,53 @@ def create_success_package_png(language: str, selected: dict[str, str], gc_suppo
 
     probe = Image.new("RGB", (width, 200), "#f8fbff")
     probe_draw = ImageDraw.Draw(probe)
-    title_font = image_font(50, True)
-    headline_font = image_font(30, True)
-    metric_font = image_font(24, True)
-    attr_font = image_font(26, True)
-    level_font = image_font(21)
-    footer_font = image_font(22)
+    title_font = image_font(76, True)
+    headline_font = image_font(44, True)
+    metric_font = image_font(38, True)
+    attr_font = image_font(42, True)
+    level_font = image_font(34)
+    footer_font = image_font(34)
     row_specs = []
     for attribute in ATTRIBUTES:
         attribute_name = text["attributes"][attribute]
         level_name = level_label(language, selected[attribute])
-        attr_lines = wrapped_lines(probe_draw, attribute_name, attr_font, 790)
-        level_lines = wrapped_lines(probe_draw, level_name, level_font, 790)
-        row_height = max(104, 36 + len(attr_lines) * 32 + len(level_lines) * 28)
+        attr_lines = wrapped_lines(probe_draw, attribute_name, attr_font, 1160)
+        level_lines = wrapped_lines(probe_draw, level_name, level_font, 1160)
+        row_height = max(150, 52 + len(attr_lines) * 52 + len(level_lines) * 44)
         row_specs.append((attribute, attr_lines, level_lines, row_height))
 
     height = top_height + sum(row[3] + 18 for row in row_specs) + bottom_height
     image = Image.new("RGB", (width, height), "#f8fbff")
     draw = ImageDraw.Draw(image)
-    draw.ellipse((-115, -80, 220, 255), fill="#e0f2fe")
-    draw.ellipse((840, -25, 1110, 245), fill="#fef3c7")
-    draw.ellipse((815, height - 350, 1190, height + 35), fill="#ede9fe")
+    draw.ellipse((-160, -110, 310, 360), fill="#e0f2fe")
+    draw.ellipse((1240, -40, 1650, 370), fill="#fef3c7")
+    draw.ellipse((1210, height - 500, 1780, height + 70), fill="#ede9fe")
 
-    draw.text((70, 58), "55%+ OK", font=title_font, fill="#0f2537")
-    headline_end_y = draw_wrapped_text(draw, (70, 128), headline, headline_font, "#17212b", 940, 10)
-    metrics_y = max(238, headline_end_y + 18)
-    draw.text((70, metrics_y), f"{text['gc_support']}: {whole_pct(gc_support)}", font=metric_font, fill="#166534")
-    draw.text((405, metrics_y), f"{text['joint_support']}: {whole_pct(joint_support)}", font=metric_font, fill="#0f2537")
-    draw.text((725, metrics_y), f"{text['tc_support']}: {whole_pct(tc_support)}", font=metric_font, fill="#166534")
+    draw.text((95, 78), "55%+ OK", font=title_font, fill="#0f2537")
+    headline_end_y = draw_wrapped_text(draw, (95, 178), headline, headline_font, "#17212b", 1410, 14)
+    metrics_y = max(330, headline_end_y + 26)
+    draw.text((95, metrics_y), f"{text['gc_support']}: {whole_pct(gc_support)}", font=metric_font, fill="#166534")
+    draw.text((585, metrics_y), f"{text['joint_support']}: {whole_pct(joint_support)}", font=metric_font, fill="#0f2537")
+    draw.text((1060, metrics_y), f"{text['tc_support']}: {whole_pct(tc_support)}", font=metric_font, fill="#166534")
 
     y = top_height
     for attribute, attr_lines, level_lines, row_height in row_specs:
         color = ATTRIBUTE_COLORS[attribute]
-        draw.rounded_rectangle((70, y, 1010, y + row_height), radius=18, fill="#ffffff", outline="#d8e2ef", width=2)
-        draw.rounded_rectangle((70, y, 82, y + row_height), radius=6, fill=color)
-        draw.ellipse((100, y + 24, 128, y + 52), fill=color)
-        text_y = y + 22
+        draw.rounded_rectangle((95, y, 1505, y + row_height), radius=24, fill="#ffffff", outline="#d8e2ef", width=3)
+        draw.rounded_rectangle((95, y, 113, y + row_height), radius=9, fill=color)
+        draw.ellipse((140, y + 36, 184, y + 80), fill=color)
+        text_y = y + 30
         for line in attr_lines:
-            draw.text((145, text_y), line, font=attr_font, fill="#17212b")
-            text_y += 32
-        text_y += 2
+            draw.text((210, text_y), line, font=attr_font, fill="#17212b")
+            text_y += 52
+        text_y += 6
         for line in level_lines:
-            draw.text((145, text_y), line, font=level_font, fill="#475569")
-            text_y += 28
-        y += row_height + 18
+            draw.text((210, text_y), line, font=level_font, fill="#475569")
+            text_y += 44
+        y += row_height + 24
 
-    draw.text((70, height - 100), "Cyprus Conjoint Predictions", font=image_font(26, True), fill="#0f2537")
-    draw.text((70, height - 58), "https://cyprusconjointpredictions-knbomutrnxm22cyulm9bjq.streamlit.app/", font=footer_font, fill="#475569")
+    draw.text((95, height - 125), "Cyprus Conjoint Predictions", font=image_font(40, True), fill="#0f2537")
+    draw.text((95, height - 68), "https://cyprusconjointpredictions-knbomutrnxm22cyulm9bjq.streamlit.app/", font=footer_font, fill="#475569")
     buffer = io.BytesIO()
     image.save(buffer, format="PNG")
     return buffer.getvalue()
@@ -863,14 +878,69 @@ def diagnose_culprit_for_group(
     return None
 
 
+def diagnose_culprits_for_group(
+    selected: dict[str, str],
+    group: str,
+    support: float,
+    excluded_attributes: set[str] | None = None,
+    limit: int = 3,
+) -> list[dict[str, object]]:
+    baseline_gap = max(0.0, AGREEMENT_THRESHOLD - support)
+    if baseline_gap <= 0:
+        return []
+
+    excluded_attributes = excluded_attributes or set()
+    best_by_attribute: list[dict[str, object]] = []
+
+    for attribute in ATTRIBUTES:
+        if attribute in excluded_attributes:
+            continue
+
+        current_level = selected[attribute]
+        best_for_attribute: dict[str, object] | None = None
+        for candidate_level in LEVELS[attribute]:
+            if candidate_level == current_level:
+                continue
+
+            candidate = dict(selected)
+            candidate[attribute] = candidate_level
+            candidate_gc = predict("GC", "forced", candidate)
+            candidate_tc = predict("TC", "forced", candidate)
+            candidate_support = candidate_gc if group == "GC" else candidate_tc
+            gap_reduction = baseline_gap - max(0.0, AGREEMENT_THRESHOLD - candidate_support)
+            joint_after = min(candidate_gc, candidate_tc)
+
+            if best_for_attribute is None or (gap_reduction, candidate_support, joint_after) > (
+                best_for_attribute["gap_reduction"],
+                best_for_attribute["candidate_support"],
+                best_for_attribute["joint_after"],
+            ):
+                best_for_attribute = {
+                    "group": group,
+                    "attribute": attribute,
+                    "current_level": current_level,
+                    "candidate_support": candidate_support,
+                    "joint_after": joint_after,
+                    "gap_reduction": gap_reduction,
+                }
+
+        if best_for_attribute and best_for_attribute["gap_reduction"] > 0:
+            best_by_attribute.append(best_for_attribute)
+
+    best_by_attribute.sort(
+        key=lambda item: (item["gap_reduction"], item["candidate_support"], item["joint_after"]),
+        reverse=True,
+    )
+    return best_by_attribute[:limit]
+
+
 def render_culprit_feedback(language: str, selected: dict[str, str], gc_support: float, tc_support: float) -> None:
-    gc_diagnostic = diagnose_culprit_for_group(selected, "GC", gc_support)
-    excluded_for_tc = {gc_diagnostic["attribute"]} if gc_diagnostic and tc_support < AGREEMENT_THRESHOLD else set()
-    tc_diagnostic = diagnose_culprit_for_group(selected, "TC", tc_support, excluded_for_tc)
-    diagnostics = [gc_diagnostic, tc_diagnostic]
-    diagnostics = [diagnostic for diagnostic in diagnostics if diagnostic is not None]
+    gc_diagnostics = diagnose_culprits_for_group(selected, "GC", gc_support)
+    excluded_for_tc = {item["attribute"] for item in gc_diagnostics[:1]} if gc_diagnostics and tc_support < AGREEMENT_THRESHOLD else set()
+    tc_diagnostics = diagnose_culprits_for_group(selected, "TC", tc_support, excluded_for_tc)
+    diagnostics_by_group = [("GC", gc_diagnostics), ("TC", tc_diagnostics)]
     text = UI[language]
-    if not diagnostics:
+    if not gc_diagnostics and not tc_diagnostics:
         st.markdown(
             "<section class='culprit-card'>"
             f"<div class='culprit-title'>&#128269; {text_value(text, 'no_bottleneck_title', 'No single clear bottleneck found')}</div>"
@@ -881,17 +951,20 @@ def render_culprit_feedback(language: str, selected: dict[str, str], gc_support:
         return
 
     rows = []
-    for culprit in diagnostics:
-        attribute = culprit["attribute"]
-        current_level = culprit["current_level"]
-        group_name = text["gc"] if culprit["group"] == "GC" else text["tc"]
-        current_choice = f"<strong>{level_label(language, current_level)}</strong>"
-        attribute_name = f"<strong>{text['attributes'][attribute]}</strong>"
+    for group, diagnostics in diagnostics_by_group:
+        if not diagnostics:
+            continue
+        group_name = text["gc"] if group == "GC" else text["tc"]
+        current_choices = "; ".join(
+            f"<strong>{text['attributes'][item['attribute']]}</strong>: {level_label(language, item['current_level'])}"
+            for item in diagnostics
+        )
+        attribute_names = ", ".join(f"<strong>{text['attributes'][item['attribute']]}</strong>" for item in diagnostics)
         rows.append(
             "<div class='culprit-community-row'>"
             f"<div>{text_value(text, 'below_target_sentence', '{community} is below target.').format(community=f'<strong>{group_name}</strong>')}</div>"
-            f"<div>{text_value(text, 'current_choice_sentence', 'The current choice is {choice}.').format(choice=current_choice)}</div>"
-            f"<div>{text_value(text, 'try_attribute_sentence', 'Try an alternative {attribute} option.').format(attribute=attribute_name)}</div>"
+            f"<div>{text_value(text, 'current_choice_sentence', 'The current choice is {choice}.').format(choice=current_choices)}</div>"
+            f"<div>{text_value(text, 'try_attributes_sentence', 'Try alternatives in these attributes: {attributes}.').format(attributes=attribute_names)}</div>"
             "</div>"
         )
 
