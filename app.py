@@ -727,8 +727,8 @@ def draw_wrapped_text(
 
 def create_success_package_png(language: str, selected: dict[str, str], gc_support: float, tc_support: float) -> bytes:
     text = UI[language]
-    width = 1600
-    top_height = 430
+    width = 1080
+    top_height = 500
     bottom_height = 230
     joint_support = min(gc_support, tc_support)
     headline = text_value(
@@ -739,53 +739,53 @@ def create_success_package_png(language: str, selected: dict[str, str], gc_suppo
 
     probe = Image.new("RGB", (width, 200), "#f8fbff")
     probe_draw = ImageDraw.Draw(probe)
-    title_font = image_font(76, True)
-    headline_font = image_font(44, True)
+    title_font = image_font(86, True)
+    headline_font = image_font(48, True)
     metric_font = image_font(38, True)
-    attr_font = image_font(42, True)
-    level_font = image_font(34)
-    footer_font = image_font(34)
+    attr_font = image_font(46, True)
+    level_font = image_font(38)
+    footer_font = image_font(30)
     row_specs = []
     for attribute in ATTRIBUTES:
         attribute_name = text["attributes"][attribute]
         level_name = level_label(language, selected[attribute])
-        attr_lines = wrapped_lines(probe_draw, attribute_name, attr_font, 1160)
-        level_lines = wrapped_lines(probe_draw, level_name, level_font, 1160)
-        row_height = max(150, 52 + len(attr_lines) * 52 + len(level_lines) * 44)
+        attr_lines = wrapped_lines(probe_draw, attribute_name, attr_font, 730)
+        level_lines = wrapped_lines(probe_draw, level_name, level_font, 730)
+        row_height = max(190, 64 + len(attr_lines) * 58 + len(level_lines) * 50)
         row_specs.append((attribute, attr_lines, level_lines, row_height))
 
     height = top_height + sum(row[3] + 18 for row in row_specs) + bottom_height
     image = Image.new("RGB", (width, height), "#f8fbff")
     draw = ImageDraw.Draw(image)
-    draw.ellipse((-160, -110, 310, 360), fill="#e0f2fe")
-    draw.ellipse((1240, -40, 1650, 370), fill="#fef3c7")
-    draw.ellipse((1210, height - 500, 1780, height + 70), fill="#ede9fe")
+    draw.ellipse((-135, -95, 280, 320), fill="#e0f2fe")
+    draw.ellipse((835, -30, 1125, 260), fill="#fef3c7")
+    draw.ellipse((805, height - 380, 1215, height + 30), fill="#ede9fe")
 
-    draw.text((95, 78), "55%+ OK", font=title_font, fill="#0f2537")
-    headline_end_y = draw_wrapped_text(draw, (95, 178), headline, headline_font, "#17212b", 1410, 14)
-    metrics_y = max(330, headline_end_y + 26)
-    draw.text((95, metrics_y), f"{text['gc_support']}: {whole_pct(gc_support)}", font=metric_font, fill="#166534")
-    draw.text((585, metrics_y), f"{text['joint_support']}: {whole_pct(joint_support)}", font=metric_font, fill="#0f2537")
-    draw.text((1060, metrics_y), f"{text['tc_support']}: {whole_pct(tc_support)}", font=metric_font, fill="#166534")
+    draw.text((70, 70), "55%+ OK", font=title_font, fill="#0f2537")
+    headline_end_y = draw_wrapped_text(draw, (70, 185), headline, headline_font, "#17212b", 940, 16)
+    metrics_y = max(375, headline_end_y + 28)
+    draw.text((70, metrics_y), f"{text['gc_support']}: {whole_pct(gc_support)}", font=metric_font, fill="#166534")
+    draw.text((70, metrics_y + 52), f"{text['joint_support']}: {whole_pct(joint_support)}", font=metric_font, fill="#0f2537")
+    draw.text((560, metrics_y + 52), f"{text['tc_support']}: {whole_pct(tc_support)}", font=metric_font, fill="#166534")
 
     y = top_height
     for attribute, attr_lines, level_lines, row_height in row_specs:
         color = ATTRIBUTE_COLORS[attribute]
-        draw.rounded_rectangle((95, y, 1505, y + row_height), radius=24, fill="#ffffff", outline="#d8e2ef", width=3)
-        draw.rounded_rectangle((95, y, 113, y + row_height), radius=9, fill=color)
-        draw.ellipse((140, y + 36, 184, y + 80), fill=color)
-        text_y = y + 30
+        draw.rounded_rectangle((70, y, 1010, y + row_height), radius=24, fill="#ffffff", outline="#d8e2ef", width=3)
+        draw.rounded_rectangle((70, y, 90, y + row_height), radius=9, fill=color)
+        draw.ellipse((115, y + 38, 163, y + 86), fill=color)
+        text_y = y + 34
         for line in attr_lines:
-            draw.text((210, text_y), line, font=attr_font, fill="#17212b")
-            text_y += 52
-        text_y += 6
+            draw.text((190, text_y), line, font=attr_font, fill="#17212b")
+            text_y += 58
+        text_y += 10
         for line in level_lines:
-            draw.text((210, text_y), line, font=level_font, fill="#475569")
-            text_y += 44
+            draw.text((190, text_y), line, font=level_font, fill="#475569")
+            text_y += 50
         y += row_height + 24
 
-    draw.text((95, height - 125), "Cyprus Conjoint Predictions", font=image_font(40, True), fill="#0f2537")
-    draw.text((95, height - 68), "https://cyprusconjointpredictions-knbomutrnxm22cyulm9bjq.streamlit.app/", font=footer_font, fill="#475569")
+    draw.text((70, height - 125), "Cyprus Conjoint Predictions", font=image_font(42, True), fill="#0f2537")
+    draw.text((70, height - 68), "cyprusconjointpredictions.streamlit.app", font=footer_font, fill="#475569")
     buffer = io.BytesIO()
     image.save(buffer, format="PNG")
     return buffer.getvalue()
