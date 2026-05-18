@@ -1123,15 +1123,15 @@ def render_package_popovers(language: str) -> dict[str, str | None]:
                 f"<span class='option-color-marker option-color-{attribute}'></span>",
                 unsafe_allow_html=True,
             )
-            with st.popover(text_value(text, "options", "Options"), use_container_width=True):
-                st.radio(
-                    text["attributes"][attribute],
-                    LEVELS[attribute],
-                    index=None,
-                    key=package_key(attribute),
-                    format_func=lambda level, lang=language: level_label(lang, level),
-                    label_visibility="collapsed",
-                )
+            st.selectbox(
+                text["attributes"][attribute],
+                LEVELS[attribute],
+                index=LEVELS[attribute].index(current_level) if current_level in LEVELS[attribute] else None,
+                key=package_key(attribute),
+                format_func=lambda level, lang=language: level_label(lang, level),
+                placeholder=text_value(text, "options", "Options"),
+                label_visibility="collapsed",
+            )
 
     selected = {attribute: st.session_state[package_key(attribute)] for attribute in ATTRIBUTES}
     if selected != previous_selected:
@@ -1634,6 +1634,57 @@ st.markdown(
     }
     .option-color-marker {
         display: none;
+    }
+    div[data-testid="stSelectbox"] {
+        margin-bottom: 0.08rem;
+    }
+    div[data-testid="stSelectbox"] [data-baseweb="select"] > div {
+        min-height: 2.9rem;
+        height: 2.9rem;
+        border-radius: 8px !important;
+        color: #ffffff !important;
+        font-size: 0.86rem;
+        font-weight: 780;
+        white-space: nowrap;
+        overflow: hidden;
+    }
+    div[data-testid="stSelectbox"] [data-baseweb="select"] span,
+    div[data-testid="stSelectbox"] [data-baseweb="select"] div {
+        color: inherit !important;
+        -webkit-text-fill-color: currentColor !important;
+        white-space: nowrap !important;
+        overflow: hidden !important;
+        text-overflow: ellipsis !important;
+    }
+    div[data-testid="stVerticalBlock"]:has(.option-color-political_structure) div[data-testid="stSelectbox"] [data-baseweb="select"] > div,
+    div[data-testid="column"]:has(.option-color-political_structure) div[data-testid="stSelectbox"] [data-baseweb="select"] > div {
+        background: #ef4444 !important;
+        border-color: #ef4444 !important;
+    }
+    div[data-testid="stVerticalBlock"]:has(.option-color-territorial_arrangements) div[data-testid="stSelectbox"] [data-baseweb="select"] > div,
+    div[data-testid="column"]:has(.option-color-territorial_arrangements) div[data-testid="stSelectbox"] [data-baseweb="select"] > div {
+        background: #f59e0b !important;
+        border-color: #f59e0b !important;
+    }
+    div[data-testid="stVerticalBlock"]:has(.option-color-compensation_property) div[data-testid="stSelectbox"] [data-baseweb="select"] > div,
+    div[data-testid="column"]:has(.option-color-compensation_property) div[data-testid="stSelectbox"] [data-baseweb="select"] > div {
+        background: #10b981 !important;
+        border-color: #10b981 !important;
+    }
+    div[data-testid="stVerticalBlock"]:has(.option-color-security_guarantees) div[data-testid="stSelectbox"] [data-baseweb="select"] > div,
+    div[data-testid="column"]:has(.option-color-security_guarantees) div[data-testid="stSelectbox"] [data-baseweb="select"] > div {
+        background: #3b82f6 !important;
+        border-color: #3b82f6 !important;
+    }
+    div[data-testid="stVerticalBlock"]:has(.option-color-judicial_system) div[data-testid="stSelectbox"] [data-baseweb="select"] > div,
+    div[data-testid="column"]:has(.option-color-judicial_system) div[data-testid="stSelectbox"] [data-baseweb="select"] > div {
+        background: #8b5cf6 !important;
+        border-color: #8b5cf6 !important;
+    }
+    div[data-testid="stVerticalBlock"]:has(.option-color-energy_cooperation) div[data-testid="stSelectbox"] [data-baseweb="select"] > div,
+    div[data-testid="column"]:has(.option-color-energy_cooperation) div[data-testid="stSelectbox"] [data-baseweb="select"] > div {
+        background: #06b6d4 !important;
+        border-color: #06b6d4 !important;
     }
     div[data-testid="stPopover"] {
         margin-bottom: 0.08rem;
