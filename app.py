@@ -10,6 +10,7 @@ from itertools import product
 from pathlib import Path
 
 import streamlit as st
+from PIL import Image, ImageDraw, ImageFont
 
 
 st.set_page_config(
@@ -660,6 +661,121 @@ def create_success_package_svg(language: str, selected: dict[str, str], gc_suppo
     return svg.encode("utf-8")
 
 
+def image_font(size: int, bold: bool = False) -> ImageFont.FreeTypeFont:
+    candidates = (
+        [r"C:\Windows\Fonts\segoeuib.ttf", r"C:\Windows\Fonts\arialbd.ttf", "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf"]
+        if bold
+        else [r"C:\Windows\Fonts\segoeui.ttf", r"C:\Windows\Fonts\arial.ttf", "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf"]
+    )
+    for candidate in candidates:
+        if Path(candidate).exists():
+            return ImageFont.truetype(candidate, size)
+    return ImageFont.load_default()
+
+
+def wrapped_lines(draw: ImageDraw.ImageDraw, content: str, font_obj: ImageFont.FreeTypeFont, max_width: int) -> list[str]:
+    lines: list[str] = []
+    for paragraph in str(content).splitlines() or [""]:
+        words = paragraph.split()
+        if not words:
+            lines.append("")
+            continue
+        current = ""
+        for word in words:
+            test = f"{current} {word}".strip()
+            if draw.textbbox((0, 0), test, font=font_obj)[2] <= max_width or not current:
+                current = test
+            else:
+                lines.append(current)
+                current = word
+        if current:
+            lines.append(current)
+    return lines
+
+
+def draw_wrapped_text(
+    draw: ImageDraw.ImageDraw,
+    xy: tuple[int, int],
+    content: str,
+    font_obj: ImageFont.FreeTypeFont,
+    fill: str,
+    max_width: int,
+    line_spacing: int = 8,
+) -> int:
+    x, y = xy
+    for line in wrapped_lines(draw, content, font_obj, max_width):
+        draw.text((x, y), line, font=font_obj, fill=fill)
+        bbox = draw.textbbox((x, y), line, font=font_obj)
+        y += (bbox[3] - bbox[1]) + line_spacing
+    return y
+
+
+def create_success_package_png(language: str, selected: dict[str, str], gc_support: float, tc_support: float) -> bytes:
+    text = UI[language]
+    width = 1080
+    top_height = 310
+    bottom_height = 180
+    joint_support = min(gc_support, tc_support)
+    headline = text_value(
+        text,
+        "share_success_text",
+        "I discovered one of the 118 variations of the Guterres framework that can be accepted by both communities!",
+    )
+
+    probe = Image.new("RGB", (width, 200), "#f8fbff")
+    probe_draw = ImageDraw.Draw(probe)
+    title_font = image_font(50, True)
+    headline_font = image_font(30, True)
+    metric_font = image_font(24, True)
+    attr_font = image_font(26, True)
+    level_font = image_font(21)
+    footer_font = image_font(22)
+    row_specs = []
+    for attribute in ATTRIBUTES:
+        attribute_name = text["attributes"][attribute]
+        level_name = level_label(language, selected[attribute])
+        attr_lines = wrapped_lines(probe_draw, attribute_name, attr_font, 790)
+        level_lines = wrapped_lines(probe_draw, level_name, level_font, 790)
+        row_height = max(104, 36 + len(attr_lines) * 32 + len(level_lines) * 28)
+        row_specs.append((attribute, attr_lines, level_lines, row_height))
+
+    height = top_height + sum(row[3] + 18 for row in row_specs) + bottom_height
+    image = Image.new("RGB", (width, height), "#f8fbff")
+    draw = ImageDraw.Draw(image)
+    draw.ellipse((-115, -80, 220, 255), fill="#e0f2fe")
+    draw.ellipse((840, -25, 1110, 245), fill="#fef3c7")
+    draw.ellipse((815, height - 350, 1190, height + 35), fill="#ede9fe")
+
+    draw.text((70, 58), "55%+ OK", font=title_font, fill="#0f2537")
+    headline_end_y = draw_wrapped_text(draw, (70, 128), headline, headline_font, "#17212b", 940, 10)
+    metrics_y = max(238, headline_end_y + 18)
+    draw.text((70, metrics_y), f"{text['gc_support']}: {whole_pct(gc_support)}", font=metric_font, fill="#166534")
+    draw.text((405, metrics_y), f"{text['joint_support']}: {whole_pct(joint_support)}", font=metric_font, fill="#0f2537")
+    draw.text((725, metrics_y), f"{text['tc_support']}: {whole_pct(tc_support)}", font=metric_font, fill="#166534")
+
+    y = top_height
+    for attribute, attr_lines, level_lines, row_height in row_specs:
+        color = ATTRIBUTE_COLORS[attribute]
+        draw.rounded_rectangle((70, y, 1010, y + row_height), radius=18, fill="#ffffff", outline="#d8e2ef", width=2)
+        draw.rounded_rectangle((70, y, 82, y + row_height), radius=6, fill=color)
+        draw.ellipse((100, y + 24, 128, y + 52), fill=color)
+        text_y = y + 22
+        for line in attr_lines:
+            draw.text((145, text_y), line, font=attr_font, fill="#17212b")
+            text_y += 32
+        text_y += 2
+        for line in level_lines:
+            draw.text((145, text_y), line, font=level_font, fill="#475569")
+            text_y += 28
+        y += row_height + 18
+
+    draw.text((70, height - 100), "Cyprus Conjoint Predictions", font=image_font(26, True), fill="#0f2537")
+    draw.text((70, height - 58), "https://cyprusconjointpredictions-knbomutrnxm22cyulm9bjq.streamlit.app/", font=footer_font, fill="#475569")
+    buffer = io.BytesIO()
+    image.save(buffer, format="PNG")
+    return buffer.getvalue()
+
+
 def render_success_share_panel(language: str, selected: dict[str, str], gc_support: float, tc_support: float) -> None:
     text = UI[language]
     share_text = text_value(
@@ -672,7 +788,7 @@ def render_success_share_panel(language: str, selected: dict[str, str], gc_suppo
     encoded_text = urllib.parse.quote(f"{share_text} {app_url}", safe="")
     facebook_url = f"https://www.facebook.com/sharer/sharer.php?u={encoded_url}"
     x_url = f"https://twitter.com/intent/tweet?text={encoded_text}"
-    image_bytes = create_success_package_svg(language, selected, gc_support, tc_support)
+    image_bytes = create_success_package_png(language, selected, gc_support, tc_support)
 
     st.markdown(
         f"""
@@ -690,8 +806,8 @@ def render_success_share_panel(language: str, selected: dict[str, str], gc_suppo
     st.download_button(
         text_value(text, "download_success_image", "Download success image"),
         image_bytes,
-        file_name="cyprus-conjoint-success-package.svg",
-        mime="image/svg+xml",
+        file_name="cyprus-conjoint-success-package.png",
+        mime="image/png",
         use_container_width=True,
     )
 
@@ -1405,6 +1521,13 @@ st.markdown(
         color: inherit !important;
         opacity: 1 !important;
         visibility: visible !important;
+    }
+    div[data-testid="stPopover"] button p,
+    div[data-testid="stPopover"] button span,
+    div[data-testid="stPopover"] button div {
+        color: inherit !important;
+        -webkit-text-fill-color: currentColor !important;
+        opacity: 1 !important;
     }
     div[data-testid="stVerticalBlock"]:has(.option-color-political_structure) div[data-testid="stPopover"] button,
     div[data-testid="column"]:has(.option-color-political_structure) div[data-testid="stPopover"] button {
