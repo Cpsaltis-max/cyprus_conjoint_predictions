@@ -32,6 +32,10 @@ GSP_LOGO = Path("gsp_logo.png")
 UCFS_LOGO = Path("ucfs_logo.png")
 INCPEACE_LOGO = Path("incpeace_logo.png")
 LSE_HELLENIC_LOGO = Path("lse_hellenic.png")
+SOUND_FILES = {
+    "success": Path("sounds/success.mp3"),
+    "failure": Path("sounds/failure.mp3"),
+}
 
 
 LEVELS = {
@@ -175,6 +179,9 @@ UI = {
         "ready_body": "When your selections are set, check whether the package reaches the 55% acceptability goal in both communities.",
         "package_instruction": 'Select one option from each attribute to build your solution package and then press the button "Check acceptability".',
         "check_acceptability": "Check acceptability",
+        "select_option_placeholder": "Choose an option",
+        "select_all_warning": "Please select one option from each attribute before checking acceptability.",
+        "try_again": "Try again",
         "bottleneck_title": "Likely bottleneck to explore",
         "below_target_sentence": "{community} is below target.",
         "current_choice_sentence": "The current choice is {choice}.",
@@ -292,6 +299,9 @@ UI["Ελληνικά"].update(
         "ready_body": "Όταν ολοκληρώσετε τις επιλογές σας, ελέγξτε αν το πακέτο φτάνει τον στόχο αποδοχής 55% και στις δύο κοινότητες.",
         "package_instruction": 'Επιλέξτε μία επιλογή από κάθε χαρακτηριστικό για να διαμορφώσετε το πακέτο λύσης σας και μετά πατήστε το κουμπί "Έλεγχος αποδοχής".',
         "check_acceptability": "Έλεγχος αποδοχής",
+        "select_option_placeholder": "Επιλέξτε επιλογή",
+        "select_all_warning": "Παρακαλώ επιλέξτε μία επιλογή από κάθε χαρακτηριστικό πριν ελέγξετε την αποδοχή.",
+        "try_again": "Προσπαθήστε ξανά",
         "bottleneck_title": "Πιθανό σημείο προς διερεύνηση",
         "below_target_sentence": "Η {community} είναι κάτω από τον στόχο.",
         "current_choice_sentence": "Η τρέχουσα επιλογή είναι {choice}.",
@@ -317,6 +327,9 @@ UI["Türkçe"].update(
         "ready_body": "Seçimleriniz hazır olduğunda, paketin iki toplumda da %55 kabul edilebilirlik hedefine ulaşıp ulaşmadığını kontrol edin.",
         "package_instruction": '"Kabul edilebilirliği kontrol et" düğmesine basmadan önce her özellikten bir seçenek seçerek çözüm paketinizi oluşturun.',
         "check_acceptability": "Kabul edilebilirliği kontrol et",
+        "select_option_placeholder": "Bir seçenek seçin",
+        "select_all_warning": "Kabul edilebilirliği kontrol etmeden önce her özellikten bir seçenek seçin.",
+        "try_again": "Tekrar deneyin",
         "bottleneck_title": "Keşfedilecek olası darboğaz",
         "below_target_sentence": "{community} hedefin altında.",
         "current_choice_sentence": "Mevcut seçim {choice}.",
@@ -482,6 +495,19 @@ def play_agreement_tone(kind: str) -> None:
     if kind not in {"success", "failure"}:
         return
 
+    sound_path = SOUND_FILES[kind]
+    if sound_path.exists():
+        encoded = base64.b64encode(sound_path.read_bytes()).decode("ascii")
+        st.markdown(
+            f"""
+            <audio autoplay style="display:none">
+                <source src="data:audio/mpeg;base64,{encoded}" type="audio/mpeg">
+            </audio>
+            """,
+            unsafe_allow_html=True,
+        )
+        return
+
     sequence = [(523.25, 0.11), (659.25, 0.11), (783.99, 0.18)] if kind == "success" else [(220, 0.14), (164.81, 0.20)]
     sample_rate = 44100
     amplitude = 0.18 if kind == "success" else 0.11
@@ -559,14 +585,22 @@ def render_agreement_status(text: dict[str, object], gc_support: float, tc_suppo
     return success
 
 
-def diagnose_culprit_for_group(selected: dict[str, str], group: str, support: float) -> dict[str, object] | None:
+def diagnose_culprit_for_group(
+    selected: dict[str, str],
+    group: str,
+    support: float,
+    excluded_attributes: set[str] | None = None,
+) -> dict[str, object] | None:
     baseline_gap = max(0.0, AGREEMENT_THRESHOLD - support)
     if baseline_gap <= 0:
         return None
 
     best: dict[str, object] | None = None
+    excluded_attributes = excluded_attributes or set()
 
     for attribute in ATTRIBUTES:
+        if attribute in excluded_attributes:
+            continue
         current_level = selected[attribute]
         for candidate_level in LEVELS[attribute]:
             if candidate_level == current_level:
@@ -603,10 +637,10 @@ def diagnose_culprit_for_group(selected: dict[str, str], group: str, support: fl
 
 
 def render_culprit_feedback(language: str, selected: dict[str, str], gc_support: float, tc_support: float) -> None:
-    diagnostics = [
-        diagnose_culprit_for_group(selected, "GC", gc_support),
-        diagnose_culprit_for_group(selected, "TC", tc_support),
-    ]
+    gc_diagnostic = diagnose_culprit_for_group(selected, "GC", gc_support)
+    excluded_for_tc = {gc_diagnostic["attribute"]} if gc_diagnostic and tc_support < AGREEMENT_THRESHOLD else set()
+    tc_diagnostic = diagnose_culprit_for_group(selected, "TC", tc_support, excluded_for_tc)
+    diagnostics = [gc_diagnostic, tc_diagnostic]
     diagnostics = [diagnostic for diagnostic in diagnostics if diagnostic is not None]
     text = UI[language]
     if not diagnostics:
@@ -679,10 +713,18 @@ def ensure_package_state() -> None:
     for attribute in ATTRIBUTES:
         key = package_key(attribute)
         if key not in st.session_state or st.session_state[key] not in LEVELS[attribute]:
-            st.session_state[key] = DEFAULT_PACKAGE[attribute]
+            st.session_state[key] = None
 
 
-def render_package_popovers(language: str) -> dict[str, str]:
+def reset_package_attempt() -> None:
+    for attribute in ATTRIBUTES:
+        st.session_state[package_key(attribute)] = None
+    st.session_state.acceptability_checked = False
+    st.session_state.agreement_sound_state = None
+    st.session_state.package_warning = False
+
+
+def render_package_popovers(language: str) -> dict[str, str | None]:
     ensure_package_state()
     text = UI[language]
     previous_selected = {attribute: st.session_state[package_key(attribute)] for attribute in ATTRIBUTES}
@@ -697,34 +739,44 @@ def render_package_popovers(language: str) -> dict[str, str]:
     for attribute in ATTRIBUTES:
         color = ATTRIBUTE_COLORS[attribute]
         attribute_label = html.escape(text["attributes"][attribute])
-        selected_label = html.escape(level_label(language, st.session_state[package_key(attribute)]))
-
-        st.markdown(
-            f"""
-            <div class="popover-attribute-card" style="--attribute-color: {color};">
-                <div class="popover-attribute-label">
-                    <span class="attribute-color-dot"></span>
-                    <span>{attribute_label}</span>
-                </div>
-                <div class="popover-selected-level">{selected_label}</div>
-            </div>
-            """,
-            unsafe_allow_html=True,
+        current_level = st.session_state[package_key(attribute)]
+        selected_label = html.escape(
+            level_label(language, current_level)
+            if current_level
+            else text_value(text, "select_option_placeholder", "Choose an option")
         )
 
-        with st.popover(text_value(text, "options", "Options"), use_container_width=True):
-            st.radio(
-                text["attributes"][attribute],
-                LEVELS[attribute],
-                key=package_key(attribute),
-                format_func=lambda level, lang=language: level_label(lang, level),
-                label_visibility="collapsed",
+        card_col, option_col = st.columns([5, 1.35], gap="small")
+        with card_col:
+            st.markdown(
+                f"""
+                <div class="popover-attribute-card" style="--attribute-color: {color};">
+                    <div class="popover-attribute-label">
+                        <span class="attribute-color-dot"></span>
+                        <span>{attribute_label}</span>
+                    </div>
+                    <div class="popover-selected-level">{selected_label}</div>
+                </div>
+                """,
+                unsafe_allow_html=True,
             )
+        with option_col:
+            with st.popover(text_value(text, "options", "Options"), use_container_width=True):
+                st.radio(
+                    text["attributes"][attribute],
+                    LEVELS[attribute],
+                    index=None,
+                    key=package_key(attribute),
+                    format_func=lambda level, lang=language: level_label(lang, level),
+                    label_visibility="collapsed",
+                )
 
     selected = {attribute: st.session_state[package_key(attribute)] for attribute in ATTRIBUTES}
     if selected != previous_selected:
         st.session_state.acceptability_checked = False
         st.session_state.agreement_sound_state = None
+        if all(selected.get(attribute) for attribute in ATTRIBUTES):
+            st.session_state.package_warning = False
 
     return selected
 
@@ -1579,9 +1631,15 @@ package_col, feedback_col = st.columns([1, 1], gap="large")
 with package_col:
     selected_levels = render_package_popovers(language)
 
-gc_support = predict("GC", "forced", selected_levels)
-tc_support = predict("TC", "forced", selected_levels)
-joint_support = min(gc_support, tc_support)
+all_attributes_selected = all(selected_levels.get(attribute) for attribute in ATTRIBUTES)
+completed_package = (
+    {attribute: selected_levels[attribute] for attribute in ATTRIBUTES}
+    if all_attributes_selected
+    else None
+)
+gc_support = predict("GC", "forced", completed_package) if completed_package else None
+tc_support = predict("TC", "forced", completed_package) if completed_package else None
+joint_support = min(gc_support, tc_support) if completed_package else None
 
 with feedback_col:
     st.markdown(
@@ -1599,9 +1657,17 @@ with feedback_col:
         use_container_width=True,
     )
     if check_clicked:
-        st.session_state.acceptability_checked = True
+        if completed_package:
+            st.session_state.acceptability_checked = True
+            st.session_state.package_warning = False
+        else:
+            st.session_state.acceptability_checked = False
+            st.session_state.package_warning = True
 
-    if st.session_state.get("acceptability_checked", False):
+    if st.session_state.get("package_warning", False):
+        st.warning(text_value(text, "select_all_warning", "Please select one option from each attribute before checking acceptability."))
+
+    if st.session_state.get("acceptability_checked", False) and completed_package:
         st.subheader(text["results_title"])
         kpi_left, kpi_mid, kpi_right = st.columns([1, 1, 1], gap="small")
 
@@ -1621,17 +1687,20 @@ with feedback_col:
             play_agreement_tone(current_agreement_state)
         st.session_state.agreement_sound_state = current_agreement_state
         if not shared_success:
-            render_culprit_feedback(language, selected_levels, gc_support, tc_support)
+            render_culprit_feedback(language, completed_package, gc_support, tc_support)
+            if st.button(text_value(text, "try_again", "Try again"), use_container_width=True):
+                reset_package_attempt()
+                st.rerun()
 
 st.markdown("<div style='height: 0.75rem;'></div>", unsafe_allow_html=True)
-if st.session_state.get("acceptability_checked", False):
+if st.session_state.get("acceptability_checked", False) and completed_package:
     left, right = st.columns([1, 1], gap="large")
 
     with left:
-        render_result_card("GC", language, selected_levels, gc_support)
+        render_result_card("GC", language, completed_package, gc_support)
 
     with right:
-        render_result_card("TC", language, selected_levels, tc_support)
+        render_result_card("TC", language, completed_package, tc_support)
 
     render_summary_table(text, gc_support, tc_support)
     render_extreme_narratives(language)
