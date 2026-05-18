@@ -1104,7 +1104,7 @@ def render_package_popovers(language: str) -> dict[str, str | None]:
             else text_value(text, "select_option_placeholder", "Choose an option")
         )
 
-        card_col, option_col = st.columns([3.2, 2.05], gap="small")
+        card_col, option_col = st.columns([2.15, 2.7], gap="small")
         with card_col:
             st.markdown(
                 f"""
@@ -1649,21 +1649,31 @@ st.markdown(
         overflow: hidden;
     }
     div[data-baseweb="popover"] {
-        min-width: min(620px, 46vw) !important;
-        max-width: min(720px, 52vw) !important;
+        width: min(980px, 72vw) !important;
+        min-width: min(900px, 66vw) !important;
+        max-width: min(980px, 72vw) !important;
+    }
+    div[data-baseweb="popover"] > div {
+        width: 100% !important;
+        max-width: none !important;
     }
     div[data-baseweb="popover"] ul,
     div[data-baseweb="popover"] [role="listbox"] {
-        min-width: min(620px, 46vw) !important;
-        max-width: min(720px, 52vw) !important;
+        width: 100% !important;
+        min-width: 100% !important;
+        max-width: none !important;
     }
     div[data-baseweb="popover"] [role="option"] {
+        width: 100% !important;
+        max-width: none !important;
         white-space: normal !important;
         height: auto !important;
         min-height: 2.45rem !important;
         align-items: flex-start !important;
     }
     div[data-baseweb="popover"] [role="option"] div {
+        width: 100% !important;
+        max-width: none !important;
         white-space: normal !important;
         overflow: visible !important;
         text-overflow: clip !important;
@@ -1781,20 +1791,21 @@ st.markdown(
     .acceptability-prompt {
         border: 1px solid #d8e2ef;
         border-radius: 8px;
-        padding: 1.15rem 1.25rem;
+        padding: 1rem 1rem;
         margin-top: 3.1rem;
         background: #f8fbff;
+        min-height: 230px;
     }
     .acceptability-prompt-title {
         color: #17212b;
-        font-size: 1.22rem;
+        font-size: 1.05rem;
         font-weight: 780;
         line-height: 1.25;
         margin-bottom: 0.35rem;
     }
     .acceptability-prompt-body {
         color: #475569;
-        font-size: 0.98rem;
+        font-size: 0.88rem;
         line-height: 1.45;
         margin-bottom: 0.9rem;
     }
@@ -2198,7 +2209,7 @@ with language_col:
 with title_col:
     st.title(text["title"])
 
-package_col, feedback_col = st.columns([1.35, 0.85], gap="large")
+package_col, feedback_col = st.columns([2.35, 0.65], gap="large")
 
 with package_col:
     selected_levels = render_package_popovers(language)
