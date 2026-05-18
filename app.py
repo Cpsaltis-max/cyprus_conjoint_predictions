@@ -3,6 +3,8 @@ import html
 import io
 import math
 import struct
+import textwrap
+import urllib.parse
 import wave
 from itertools import product
 from pathlib import Path
@@ -182,6 +184,11 @@ UI = {
         "select_option_placeholder": "Choose an option",
         "select_all_warning": "Please select one option from each attribute before checking acceptability.",
         "try_again": "Try again",
+        "share_success_title": "Share your discovery",
+        "share_success_text": "I discovered one of the 118 variations of the Guterres framework that can be accepted by both communities!",
+        "download_success_image": "Download success image",
+        "share_on_facebook": "Share on Facebook",
+        "share_on_x": "Share on X",
         "research_method_note": 'The app is based on an experimental method called "conjoint survey experiment". In previous published research of our team (<a href="https://journals.sagepub.com/doi/10.1177/00220027221108221" target="_blank" rel="noopener noreferrer">read the article</a>) this method was applied to identify possible “zones of agreement” between Greek Cypriots and Turkish Cypriots on a future peace settlement. Representative samples from both communities were shown pairs of hypothetical peace packages and asked to choose between them. Each package varied across five key attributes: federal executive, territorial readjustments, property compensation, implementation/security monitoring, and Supreme Court composition. By randomly varying these attributes, the method estimates which elements increase or decrease public support. The analysis uses a binary outcome, whether a package was preferred, and estimates marginal effects to reveal both community divergences and potential compromise positions.',
         "bottleneck_title": "Likely bottleneck to explore",
         "below_target_sentence": "{community} is below target.",
@@ -303,6 +310,11 @@ UI["Ελληνικά"].update(
         "select_option_placeholder": "Επιλέξτε επιλογή",
         "select_all_warning": "Παρακαλώ επιλέξτε μία επιλογή από κάθε χαρακτηριστικό πριν ελέγξετε την αποδοχή.",
         "try_again": "Προσπαθήστε ξανά",
+        "share_success_title": "Μοιραστείτε την ανακάλυψή σας",
+        "share_success_text": "Ανακάλυψα μία από τις 118 παραλλαγές του πλαισίου Γκουτέρες που μπορούν να γίνουν αποδεκτές και από τις δύο κοινότητες!",
+        "download_success_image": "Λήψη εικόνας επιτυχίας",
+        "share_on_facebook": "Κοινοποίηση στο Facebook",
+        "share_on_x": "Κοινοποίηση στο X",
         "research_method_note": 'Η εφαρμογή βασίζεται σε μια πειραματική μέθοδο που ονομάζεται "πείραμα conjoint survey". Σε προηγούμενη δημοσιευμένη έρευνα της ομάδας μας (<a href="https://journals.sagepub.com/doi/10.1177/00220027221108221" target="_blank" rel="noopener noreferrer">διαβάστε το άρθρο</a>) η μέθοδος αυτή εφαρμόστηκε για να εντοπιστούν πιθανές “ζώνες συμφωνίας” ανάμεσα σε Ελληνοκύπριους και Τουρκοκύπριους για μια μελλοντική ειρηνευτική διευθέτηση. Αντιπροσωπευτικά δείγματα και από τις δύο κοινότητες είδαν ζεύγη υποθετικών πακέτων λύσης και κλήθηκαν να επιλέξουν ανάμεσά τους. Κάθε πακέτο διέφερε σε πέντε βασικά χαρακτηριστικά: ομοσπονδιακή εκτελεστική εξουσία, εδαφικές αναπροσαρμογές, αποζημίωση περιουσιών, παρακολούθηση εφαρμογής και ασφάλειας, και σύνθεση του Ανώτατου Δικαστηρίου. Με την τυχαία διαφοροποίηση αυτών των χαρακτηριστικών, η μέθοδος εκτιμά ποια στοιχεία αυξάνουν ή μειώνουν τη δημόσια στήριξη. Η ανάλυση χρησιμοποιεί ένα δυαδικό αποτέλεσμα, δηλαδή αν ένα πακέτο προτιμήθηκε, και εκτιμά οριακές επιδράσεις για να αναδείξει τόσο τις αποκλίσεις μεταξύ των κοινοτήτων όσο και πιθανές θέσεις συμβιβασμού.',
         "bottleneck_title": "Πιθανό σημείο προς διερεύνηση",
         "below_target_sentence": "Η {community} είναι κάτω από τον στόχο.",
@@ -332,6 +344,11 @@ UI["Türkçe"].update(
         "select_option_placeholder": "Bir seçenek seçin",
         "select_all_warning": "Kabul edilebilirliği kontrol etmeden önce her özellikten bir seçenek seçin.",
         "try_again": "Tekrar deneyin",
+        "share_success_title": "Keşfinizi paylaşın",
+        "share_success_text": "Guterres çerçevesinin iki toplum tarafından kabul edilebilecek 118 varyasyonundan birini keşfettim!",
+        "download_success_image": "Başarı görselini indir",
+        "share_on_facebook": "Facebook'ta paylaş",
+        "share_on_x": "X'te paylaş",
         "research_method_note": 'Bu uygulama "conjoint survey experiment" adı verilen deneysel bir yönteme dayanmaktadır. Ekibimizin daha önce yayımlanan araştırmasında (<a href="https://journals.sagepub.com/doi/10.1177/00220027221108221" target="_blank" rel="noopener noreferrer">makaleyi okuyun</a>) bu yöntem, Kıbrıslı Rumlar ve Kıbrıslı Türkler arasında gelecekteki bir barış anlaşmasına ilişkin olası “uzlaşma alanlarını” belirlemek için uygulanmıştır. Her iki toplumdan temsili örneklemlere varsayımsal barış paketlerinden oluşan ikili seçenekler gösterilmiş ve aralarından birini seçmeleri istenmiştir. Her paket beş temel özellik bakımından değişmiştir: federal yürütme, toprak düzenlemeleri, mülkiyet tazminatı, uygulama/güvenlik izlemesi ve Yüksek Mahkeme bileşimi. Bu özellikleri rastgele değiştirerek yöntem, hangi unsurların kamu desteğini artırdığını veya azalttığını tahmin eder. Analiz, bir paketin tercih edilip edilmediğini gösteren ikili bir sonuç kullanır ve hem toplumlar arası ayrışmaları hem de olası uzlaşma pozisyonlarını ortaya koymak için marjinal etkileri tahmin eder.',
         "bottleneck_title": "Keşfedilecek olası darboğaz",
         "below_target_sentence": "{community} hedefin altında.",
@@ -586,6 +603,97 @@ def render_agreement_status(text: dict[str, object], gc_support: float, tc_suppo
         unsafe_allow_html=True,
     )
     return success
+
+
+def create_success_package_svg(language: str, selected: dict[str, str], gc_support: float, tc_support: float) -> bytes:
+    text = UI[language]
+    width = 1080
+    row_height = 92
+    top_height = 250
+    bottom_height = 180
+    height = top_height + row_height * len(ATTRIBUTES) + bottom_height
+    joint_support = min(gc_support, tc_support)
+    headline = text_value(
+        text,
+        "share_success_text",
+        "I discovered one of the 118 variations of the Guterres framework that can be accepted by both communities!",
+    )
+
+    def svg_text_lines(content: str, x: int, y: int, size: int, color: str, weight: int = 400, max_chars: int = 64) -> str:
+        lines = textwrap.wrap(content, width=max_chars)
+        return "".join(
+            f'<text x="{x}" y="{y + index * int(size * 1.35)}" font-size="{size}" font-weight="{weight}" fill="{color}">{html.escape(line)}</text>'
+            for index, line in enumerate(lines)
+        )
+
+    rows = []
+    y = top_height
+    for attribute in ATTRIBUTES:
+        color = ATTRIBUTE_COLORS[attribute]
+        attribute_name = text["attributes"][attribute]
+        level_name = level_label(language, selected[attribute])
+        rows.append(
+            f'<rect x="70" y="{y}" width="940" height="72" rx="18" fill="{color}" opacity="0.12"/>'
+            f'<rect x="70" y="{y}" width="10" height="72" rx="5" fill="{color}"/>'
+            f'<circle cx="108" cy="{y + 36}" r="13" fill="{color}"/>'
+            f'<text x="135" y="{y + 30}" font-size="25" font-weight="800" fill="#17212b">{html.escape(attribute_name)}</text>'
+            f'<text x="135" y="{y + 58}" font-size="19" fill="#475569">{html.escape(level_name[:92])}</text>'
+        )
+        y += row_height
+
+    svg = (
+        f'<svg xmlns="http://www.w3.org/2000/svg" width="{width}" height="{height}" viewBox="0 0 {width} {height}">'
+        '<rect width="100%" height="100%" fill="#f8fbff"/>'
+        '<circle cx="80" cy="80" r="150" fill="#e0f2fe"/>'
+        '<circle cx="990" cy="110" r="120" fill="#fef3c7"/>'
+        '<circle cx="930" cy="930" r="180" fill="#ede9fe"/>'
+        '<text x="70" y="78" font-size="48" font-weight="850" fill="#0f2537">55%+ ✓</text>'
+        f'{svg_text_lines(headline, 70, 132, 29, "#17212b", 760, 58)}'
+        f'<text x="70" y="220" font-size="24" font-weight="760" fill="#166534">{html.escape(text["gc_support"])}: {whole_pct(gc_support)}</text>'
+        f'<text x="405" y="220" font-size="24" font-weight="760" fill="#0f2537">{html.escape(text["joint_support"])}: {whole_pct(joint_support)}</text>'
+        f'<text x="725" y="220" font-size="24" font-weight="760" fill="#166534">{html.escape(text["tc_support"])}: {whole_pct(tc_support)}</text>'
+        f'{"".join(rows)}'
+        f'<text x="70" y="{height - 92}" font-size="26" font-weight="800" fill="#0f2537">Cyprus Conjoint Predictions</text>'
+        f'<text x="70" y="{height - 52}" font-size="22" fill="#475569">https://cyprusconjointpredictions-knbomutrnxm22cyulm9bjq.streamlit.app/</text>'
+        '</svg>'
+    )
+    return svg.encode("utf-8")
+
+
+def render_success_share_panel(language: str, selected: dict[str, str], gc_support: float, tc_support: float) -> None:
+    text = UI[language]
+    share_text = text_value(
+        text,
+        "share_success_text",
+        "I discovered one of the 118 variations of the Guterres framework that can be accepted by both communities!",
+    )
+    app_url = "https://cyprusconjointpredictions-knbomutrnxm22cyulm9bjq.streamlit.app/"
+    encoded_url = urllib.parse.quote(app_url, safe="")
+    encoded_text = urllib.parse.quote(f"{share_text} {app_url}", safe="")
+    facebook_url = f"https://www.facebook.com/sharer/sharer.php?u={encoded_url}"
+    x_url = f"https://twitter.com/intent/tweet?text={encoded_text}"
+    image_bytes = create_success_package_svg(language, selected, gc_support, tc_support)
+
+    st.markdown(
+        f"""
+        <section class="share-card">
+            <div class="share-title">{text_value(text, "share_success_title", "Share your discovery")}</div>
+            <div class="share-text">{share_text}</div>
+            <div class="share-actions">
+                <a href="{facebook_url}" target="_blank" rel="noopener noreferrer">{text_value(text, "share_on_facebook", "Share on Facebook")}</a>
+                <a href="{x_url}" target="_blank" rel="noopener noreferrer">{text_value(text, "share_on_x", "Share on X")}</a>
+            </div>
+        </section>
+        """,
+        unsafe_allow_html=True,
+    )
+    st.download_button(
+        text_value(text, "download_success_image", "Download success image"),
+        image_bytes,
+        file_name="cyprus-conjoint-success-package.svg",
+        mime="image/svg+xml",
+        use_container_width=True,
+    )
 
 
 def diagnose_culprit_for_group(
@@ -1290,31 +1398,49 @@ st.markdown(
         padding: 0.05rem 0.45rem;
         font-size: 0.92rem;
         font-weight: 760;
-        color: #ffffff !important;
+        color: #334155 !important;
+        background: #ffffff !important;
     }
+    div[data-testid="stPopover"] button * {
+        color: inherit !important;
+        opacity: 1 !important;
+        visibility: visible !important;
+    }
+    div[data-testid="stVerticalBlock"]:has(.option-color-political_structure) div[data-testid="stPopover"] button,
     div[data-testid="column"]:has(.option-color-political_structure) div[data-testid="stPopover"] button {
         background: #ef4444 !important;
         border-color: #ef4444 !important;
+        color: #ffffff !important;
     }
+    div[data-testid="stVerticalBlock"]:has(.option-color-territorial_arrangements) div[data-testid="stPopover"] button,
     div[data-testid="column"]:has(.option-color-territorial_arrangements) div[data-testid="stPopover"] button {
         background: #f59e0b !important;
         border-color: #f59e0b !important;
+        color: #ffffff !important;
     }
+    div[data-testid="stVerticalBlock"]:has(.option-color-compensation_property) div[data-testid="stPopover"] button,
     div[data-testid="column"]:has(.option-color-compensation_property) div[data-testid="stPopover"] button {
         background: #10b981 !important;
         border-color: #10b981 !important;
+        color: #ffffff !important;
     }
+    div[data-testid="stVerticalBlock"]:has(.option-color-security_guarantees) div[data-testid="stPopover"] button,
     div[data-testid="column"]:has(.option-color-security_guarantees) div[data-testid="stPopover"] button {
         background: #3b82f6 !important;
         border-color: #3b82f6 !important;
+        color: #ffffff !important;
     }
+    div[data-testid="stVerticalBlock"]:has(.option-color-judicial_system) div[data-testid="stPopover"] button,
     div[data-testid="column"]:has(.option-color-judicial_system) div[data-testid="stPopover"] button {
         background: #8b5cf6 !important;
         border-color: #8b5cf6 !important;
+        color: #ffffff !important;
     }
+    div[data-testid="stVerticalBlock"]:has(.option-color-energy_cooperation) div[data-testid="stPopover"] button,
     div[data-testid="column"]:has(.option-color-energy_cooperation) div[data-testid="stPopover"] button {
         background: #06b6d4 !important;
         border-color: #06b6d4 !important;
+        color: #ffffff !important;
     }
     div[data-testid="stButton"] button[kind="secondary"] {
         background: #bbf7d0 !important;
@@ -1454,6 +1580,49 @@ st.markdown(
     .agreement-badge-below_target {
         border-color: #f0cf83;
         color: #8a5b00;
+    }
+    .share-card {
+        border: 1px solid #b7e4c7;
+        border-left: 6px solid #22c55e;
+        border-radius: 8px;
+        padding: 1rem 1.15rem;
+        margin: 0.7rem 0 0.55rem 0;
+        background: #f0fdf4;
+    }
+    .share-title {
+        color: #14532d;
+        font-size: 1.06rem;
+        font-weight: 820;
+        line-height: 1.25;
+    }
+    .share-text {
+        color: #334155;
+        font-size: 0.96rem;
+        line-height: 1.4;
+        margin-top: 0.35rem;
+    }
+    .share-actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+        margin-top: 0.75rem;
+    }
+    .share-actions a {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 999px;
+        padding: 0.45rem 0.72rem;
+        background: #ffffff;
+        border: 1px solid #86efac;
+        color: #166534;
+        font-weight: 760;
+        text-decoration: none;
+        font-size: 0.9rem;
+    }
+    .share-actions a:hover {
+        background: #dcfce7;
+        text-decoration: none;
     }
     .culprit-card {
         border: 1px solid #e4d6b2;
@@ -1770,6 +1939,8 @@ with feedback_col:
                 use_container_width=True,
                 on_click=reset_package_attempt,
             )
+        else:
+            render_success_share_panel(language, completed_package, gc_support, tc_support)
 
 st.markdown("<div style='height: 0.75rem;'></div>", unsafe_allow_html=True)
 if st.session_state.get("acceptability_checked", False) and completed_package:
